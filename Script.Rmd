@@ -5,10 +5,24 @@ date: "2024-05-30"
 output: html_document
 ---
 
+# 1. Prepare Data
+
+Here we clean our data and prepare dataframes/.csv files for statistical analysis. This section takes the raw data from the ddPCR plate files ("/Data" directory) and separates it into 4 .csv's
+
+1.  LeafMesos-BKD.csv (Background samples from mesocosms pre-release)
+2.   LeafMesos-Controls.csv (Field blanks, Extraction blanks, and +/- PCR controls)
+3.  LeafMesos-ReleaseSolution.csv (eDNA source solution / buckets)
+4.  LeafMesos-Mesoscosms.csv (the release data)
+
+In addition, this script incorporates additional relevant data from the experiment, drawn from the "/Files" directory. This includes the volume of water filtered from each sample, as well as ancillary data (Temp, pH, water velocity, nutrient conc.,
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-rm(list=ls())
+rm(list=objects())
 this.dir = dirname(rstudioapi::getActiveDocumentContext()$path)
+data.dir = paste0(this.dir,"/Data")
+files.dir = paste0(this.dir,"/Files")
+plots.dir = paste0(this.dir,"/Plots")
 setwd(this.dir)
 
 #Packages
@@ -30,11 +44,11 @@ Here, we prepare the raw data (.csv files obtained from the ddPCR machine) for a
 Data.Full = data.frame(matrix(nrow= 0, ncol =0))
 
 #Load Data into Data.Full
-#'[The "Files" folder must be in the working directory] 
-list = list.files(paste(this.dir,"/Files",sep=""))
+ 
+list = list.files(data.dir)
 list <- mixedsort(sort(list))
 for (i in 1:length(list)) {
-  Data.Full <-rbind(Data.Full, read.csv(paste(this.dir,"/Files/",list[i], sep="") , row.names = ) %>% mutate(Run = i))
+  Data.Full <-rbind(Data.Full, read.csv(paste0(data.dir,"/",list[i]) , row.names = ) %>% mutate(Run = i))
 }
 
 #Remove unnecessary columns from Quantasoft outputs
@@ -71,13 +85,14 @@ Data.C <- Data.Full %>%
          substr(Sample,1,2) == "CB")
 
 #Data about the sample is encoded in its name
-#This will produce an error, but not to worry
+
 Data.NC <- Data.NC %>% 
   cbind(colsplit.character(Data.NC$Sample,
                            split="_", 
                            names = c("Meso.Num", "Time", "Size","Dilution")
                            )
-        )
+        ) %>% 
+  suppressWarnings()
 
 #Separate the release solution from sample data
 
@@ -107,65 +122,92 @@ rm(x)
 Data.NC <- Data.NC %>% mutate(Concentration = Concentration * as.double(Dilution))
 
 #Combining Technical Replicates
-#Any given mesocosm sample is uniquely identified by "Sample" and "Target"
-x <- Data.NC %>% group_by(Sample, Target) %>% 
-  summarize(Well = "*", Target = first(Target),CopiesPer20uLWell = mean(CopiesPer20uLWell), Positives = sum(Positives), Negatives= sum(Negatives), AcceptedDroplets = sum(AcceptedDroplets), Threshold = mean(Threshold), Run = first(Run), Dilution = first(Dilution))
-#Calculate concentration using the probability density function for the Poisson Distribution
-#In this formula, 0.000848 is the average volume of a droplet during ddPCR (Given by Quantasoft)
-#This is the same calculation that QuantaSoft uses when determining concentration. 
-x <- x %>% mutate(Concentration = -log(Negatives/AcceptedDroplets)/0.000848)
+
+#We ran each mesocosm sample in triplicate, and we want to combine these 3 values into a single value for concentration. 
+#We do this by summing the positive and negative droplets for all 3 ...
+
+x <- Data.NC %>% 
+  group_by(Sample, Target) %>% 
+  summarize(Well = "*", 
+            Target = first(Target),
+            CopiesPer20uLWell = mean(CopiesPer20uLWell), 
+            Positives = sum(Positives), 
+            Negatives= sum(Negatives), 
+            AcceptedDroplets = sum(AcceptedDroplets), 
+            Threshold = mean(Threshold), 
+            Run = first(Run), 
+            Dilution = first(Dilution)
+            ) %>% 
+  suppressMessages()
+
+#Now we calucate concentration from the PDF of the Poisson Distribution 
+#Quantasoft applies this formula to each well to obtain the estimate for concentration; here we apply it to the sum of three wells
+#In this formula, 0.000848 uL is the average volume of a droplet during ddPCR (Given by Quantasoft)
+ 
+x <- x %>% 
+  mutate(Concentration = -log(Negatives/AcceptedDroplets)/0.000848)
+#Units for Concentration are gene copies per uL
+
 #Separate "Sample" again and fix dilution
-x <- x %>% cbind(colsplit.character(x$Sample, split="_", names = c("Meso.Num", "Time", "Size")))
+x <- x %>% 
+  cbind(colsplit.character(x$Sample, 
+                           split="_", 
+                           names = c("Meso.Num", "Time", "Size")
+                           ) 
+        ) %>% 
+  suppressWarnings()
 x <- x[-c(15)]
 x$Dilution <- as.numeric(x$Dilution)
 x <- x %>%  mutate(Concentration = Concentration*Dilution)
 
-
-#Take rows that are still below LOD and assign concentration to 0
-y <- x %>% 
-  subset((Target == "CARP" & CopiesPer20uLWell <= 3.8 & CopiesPer20uLWell != 0) | (Target == "STHD" & CopiesPer20uLWell <= 3.2 & CopiesPer20uLWell != 0)) %>% 
-  mutate(CopiesPer20uLWell = 0, Concentration =0, Well="%")
-x <- x %>%  subset((CopiesPer20uLWell > 3.8 & Target == "CARP") | (CopiesPer20uLWell > 3.2 & Target == "STHD") | CopiesPer20uLWell == 0)
-
-
 #Recombine
-Data.NC <- rbind(x,y)
-rm(x)
-rm(y)
+Data.NC <- x
 
-
-#truncate Concentration
-Data.NC$Concentration <- Data.NC$Concentration %>% round_any(accuracy = 0.01, f=floor)
+#Truncate concentration to 2 decimal places
+Data.NC$Concentration <- Data.NC$Concentration %>% 
+  round_any(accuracy = 0.01, f=floor)
 
 #Filter out BKD samples
+
+#BKD = Background data, i.e. samples taken prior to eDNA addition
 Data.BKD <- Data.NC %>% subset(Time == "BKD")
+#NC = Not Control (i.e. samples taken after eDNA addition)
 Data.NC <- Data.NC %>% subset(Time != "BKD")
 
+
 #Get volume filtered for each sample 
-#inner-join works basically like VLOOKUP in Excel
-Vol.Filtered <- read.csv(paste(this.dir,"/FilteredVolume.csv",sep=""))
+Vol.Filtered <- read.csv(paste0(files.dir,"/FilteredVolume.csv"))
 Data.NC <- inner_join(Data.NC, Vol.Filtered, by=c('Meso.Num','Time','Size'))
 
-#Calculate Actual Concentration
-#This formula varies based on extraction and PCR method, make sure to double check
-Data.NC <- Data.NC %>% mutate(GC.mL = (Concentration*1000)/(4*Vol.Filtered.mL))
+#Calculate the eDNA conc. in the water sample (GC.mL) given the concentration in the ddPCR reaction (Concentration, in GC / uL)
+#DNA from the sample is eluted in 50uL of buffer 
+# 4uL of this eluted DNA is added to 16 uL supermix (20 uL total rxn mixture)
+# After algebra, calculation is the following 
+
+Data.NC <- Data.NC %>% 
+  mutate(GC.mL = Concentration*250 /Vol.Filtered.mL)
 
 #Get mesocosm volume + ancillary for each mesocosm
-#This datasheet contains DOC, Tempt, pH, turbidity, and most importantly, Mesocosm Volume for each time point
-Vol.Meso <- read.csv(paste(this.dir,"/AncillaryFULL.csv",sep=""))
+#This datasheet contains DOC, Temp, pH, turbidity, and most importantly, Mesocosm Volume for each time point
+Vol.Meso <- read.csv(paste0(files.dir,"/AncillaryFULL.csv"))
 Data.NC <- inner_join(Data.NC,Vol.Meso, by=c("Meso.Num","Time"))
 
 
-#Calculate Gc per mesocosm
+#Multiply GC.mL (concentration data) with Mesocosm volumes to get total number of gene copies in each mesocosm (count data)
 Data.NC <- Data.NC %>% mutate(Gc.mesocosm = GC.mL * Meso.Volume.mL)
 
-#Repeat Process for BKT dataframe
-Data.BKT <- Data.BKT %>% dplyr::rename(Bucket = Meso.Num, Rel.soln = Time)
+#Now adjust for diluted samples in release solution data
+Data.BKT <- Data.BKT %>% 
+  dplyr::rename(Bucket = Meso.Num, Rel.soln = "Time")
+
 X <- Data.BKT$Dilution
-Data.BKT$Dilution <- X %>% replace(X == "BKT1"| X == "BKT2" | X =="BKT3" | X =="BKT4","1")
+Data.BKT$Dilution <- X %>%
+  replace(X == "BKT1"| X == "BKT2" | X =="BKT3" | X =="BKT4", "1")
 rm(X)
-#Adjust Concentration by dilution
-Data.BKT <- Data.BKT %>% mutate(Concentration = Concentration * as.double(Dilution))
+
+#Adjust Concentration by dilution factor
+Data.BKT <- Data.BKT %>% 
+  mutate(Concentration = Concentration * as.double(Dilution))
 
 #Ignore Carp in STHD buckets and Steelhead in Carp Buckets (usually below LOD anyway)
 #Also remove run 15, samples needed diluting, positive cloud was too dense
@@ -174,13 +216,10 @@ Data.BKT <- Data.BKT %>% subset(Target == Rel.soln & Run != 15 & Run != 13)
 #Calculate true concentration (Vol. Filtered was 100mL for every sample)
 Data.BKT <- Data.BKT %>% mutate(GC.mL = (Concentration*1000)/(4*100))
 
-#Export Data Frames as .csv
-write.csv(Data.BKD, file="LeafMesos-BKD.csv")
-write.csv(Data.C, file="LeafMesos-Controls.csv")
-write.csv(Data.BKT, file="LeafMesos-ReleaseSolution.csv")
-write.csv(Data.NC, file="LeafMesos-Mesoscosms.csv")
-
-
-
-
+#Export everything as .csv files to "Files" directory
+?write.csv
+write.csv(Data.BKD, paste0(files.dir,"/LeafMesos-BKD.csv"))
+write.csv(Data.C, paste0(files.dir,"/LeafMesos-Controls.csv"))
+write.csv(Data.BKT, paste0(files.dir,"/LeafMesos-ReleaseSolution.csv"))
+write.csv(Data.NC, paste0(files.dir,"/LeafMesos-Mesoscosms.csv"))
 ```
