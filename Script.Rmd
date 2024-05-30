@@ -14,7 +14,7 @@ Here we clean our data and prepare dataframes/.csv files for statistical analysi
 3.  LeafMesos-ReleaseSolution.csv (eDNA source solution / buckets)
 4.  LeafMesos-Mesoscosms.csv (the release data)
 
-In addition, this script incorporates additional relevant data from the experiment, drawn from the "/Files" directory. This includes the volume of water filtered from each sample, as well as ancillary data (Temp, pH, water velocity, nutrient conc.,
+In addition, this script incorporates additional relevant data from the experiment, drawn from the "/Files" directory. This includes the volume of water filtered from each sample, as well as ancillary data (Temp, pH, water velocity, nutrient conc., etc.)
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -223,3 +223,5 @@ write.csv(Data.C, paste0(files.dir,"/LeafMesos-Controls.csv"))
 write.csv(Data.BKT, paste0(files.dir,"/LeafMesos-ReleaseSolution.csv"))
 write.csv(Data.NC, paste0(files.dir,"/LeafMesos-Mesoscosms.csv"))
 ```
+
+# Data Analysis + Figure Generation
