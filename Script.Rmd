@@ -16,7 +16,7 @@ Here we clean our data and prepare dataframes/.csv files for statistical analysi
 
 In addition, this script incorporates additional relevant data from the experiment, drawn from the "/Files" directory. This includes the volume of water filtered from each sample, as well as ancillary data (Temp, pH, water velocity, nutrient conc., etc.)
 
-```{r setup, include=FALSE}
+```{r setup}
 knitr::opts_chunk$set(echo = TRUE)
 rm(list=objects())
 this.dir = dirname(rstudioapi::getActiveDocumentContext()$path)
@@ -224,4 +224,156 @@ write.csv(Data.BKT, paste0(files.dir,"/LeafMesos-ReleaseSolution.csv"))
 write.csv(Data.NC, paste0(files.dir,"/LeafMesos-Mesoscosms.csv"))
 ```
 
-# Data Analysis + Figure Generation
+# 2. Data Analysis + Figure Generation
+
+Import packages, function definitions, color schemes, and themes for ggplot2 objects.
+
+```{r setup}
+library(ggplot2)
+library(plyr)
+library(dplyr)
+library(grid)
+library(tidyverse)
+library(GGally)
+library(Hmisc)
+library(stats)
+library(emmeans)
+library(ggpubr)
+library(lme4)
+library(rstatix)
+library(ggResidpanel)
+library(PCAtools)
+library(lmerTest)
+library(colourpicker)
+library(ggsignif)
+library(MuMIn)
+library(lmtest)
+library(vegan)
+library(gcookbook)
+library(ggfortify)
+library(patchwork)
+library(car)
+library(gridExtra)
+library(magrittr)
+rm(list=objects())
+
+this.dir = dirname(rstudioapi::getActiveDocumentContext()$path)
+data.dir = paste0(this.dir,"/Data")
+files.dir = paste0(this.dir,"/Files")
+plots.dir = paste0(this.dir,"/Plots")
+setwd(this.dir)
+
+#Functions
+#This function colors the facets of a ggplot2 object
+facetColor <- function(plot,colors) {
+  g <- ggplot_gtable(ggplot_build(plot))
+  strip_both <- which(grepl('strip-', g$layout$name))
+  fills <- colors
+  k <- 1
+  for (i in strip_both) {
+    j <- which(grepl('rect', g$grobs[[i]]$grobs[[1]]$childrenOrder))
+    g$grobs[[i]]$grobs[[1]]$children[[j]]$gp$fill <- fills[k]
+    k <- k+1
+  }
+  grid.draw(g)
+  
+  return(g)
+}
+
+## Annotation Function for plotting inset graphs
+annotation_custom2 <- function (grob, xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf, data) 
+{
+  layer(data = data, stat = StatIdentity, position = PositionIdentity, 
+        geom = ggplot2:::GeomCustomAnn,
+        inherit.aes = TRUE, params = list(grob = grob, 
+                                          xmin = xmin, xmax = xmax, 
+                                          ymin = ymin, ymax = ymax))
+}
+
+#Themes
+#Color palette 
+p1 <- c("gray81","#bdd7e7","#2171b5","#6baed6")
+p2 <- c("#f08080","#f4978e","#f8ad9d","#fbc4ab")
+p3 <- c("#dee2e6","#adb5bd","#495057","#212529",
+        "red","maroon","magenta","lavender")
+p4 <- c("#B7ECFF","#E8CDE9","#A0ABB2","#CDA969",
+        "#fcca46","#fe7f2d","#a1c181","#618f9b")
+p5 <- c("#A0ABB2","#CDA969","#fcca46","#fe7f2d","#a1c181",
+        "#618f9b","#f08080","#f4978e","#f8ad9d","#fbc4ab")
+p6 <- c("#A0ABB2","#CDA969","#fcca46","#fe7f2d",
+        "#a1c181","#618f9b","#B7ECFF","#E8CDE9")
+p7 <- c("#A0ABB2","#CDA969","#fcca46","#fe7f2d","#a1c181","#618f9b")
+p7.5 <- c("#89959c", "#b29155", "#e3b238", "#e76c1f", "#91aa73", "#547785")
+p8 <- c("#C5C7C9","#D9C196","#F0D27F","#F5985A","#B5C7A3","#79A7B3")
+p8.5 <- c("#E0E2E4", "#F3DDB1", "#FFEB9D", "#FFB782", "#D0E3BC", "#9ECBD7")
+p9 <- c(p7,p8)
+p9.5 <- c(p7.5, p8.5)
+p10 <- c("gray81","thistle1","mediumpurple1","darkorchid2")
+p11 <- c("#009AD0","#B7ECFF","#BD62CC","#E8CDE9")
+
+#Themes
+
+```
+
+Setup
+
+```{r Step 1}
+#Load datafile   
+Mesos <- read.csv(paste0(files.dir,"/LeafMesos-Mesoscosms.csv"))
+Mesos <- Mesos[-1]
+
+# Cast columns to factors
+Mesos$Time <- as.factor(Mesos$Time)
+Mesos$Size <- as.factor(Mesos$Size)
+Mesos$Row <- as.factor(Mesos$Row)
+Mesos$Treatment <- as.factor(Mesos$Treatment)
+
+#Remove Mesocosm 15, too many issues in droplet cloud separation. 
+#Probably an extraction issue? Dust/particles in the samples?
+#Could also be an inhibition issue.
+Mesos <- Mesos %>% subset(Meso.Num != "M15")
+
+#Remove any 0's (or below LOD) to their own df for later
+#LOD is 3.8 GC/rxn for Carp and 3.2 GC/rxn for Steelhead
+Mesos.Full <- Mesos
+
+Mesos.Zeros <- Mesos %>% 
+  subset(GC.mL == 0 |
+           (Target=="CARP" & CopiesPer20uLWell < 3.8) |
+           (Target=="STHD" & CopiesPer20uLWell < 3.2)
+         )
+
+Mesos <- Mesos %>% 
+  subset(GC.mL != 0 & ((Target=="CARP" & CopiesPer20uLWell > 3.8) |
+                         (Target=="STHD" & CopiesPer20uLWell > 3.2)) 
+         )
+
+#Calculate LN for all GC.meso 
+Mesos$LNGc.meso = log(Mesos$Gc.mesocosm)
+
+#Set orders
+Mesos$Treatment = factor(Mesos$Treatment, 
+                         levels=c("ETO", "DOC","NCL","NCH","BFL","BFH"))
+
+### Export Slope Data ----
+X <- Mesos %>%
+  group_by(Meso.Num, Row, Target, Treatment, Size) %>%
+  do({
+    mod = lm(LNGc.meso ~ Time.hr, data = .)
+    data.frame(K = coef(mod)[2] *24)
+  }) 
+depthkey <- Mesos %>% 
+  group_by(Meso.Num) %>% 
+  summarise(depth = mean(depth.m))
+X$Trtmt <- X$Treatment
+X = subset(X,select = -Treatment)
+X <- inner_join(X, depthkey, by= "Meso.Num")
+
+X <- X %>% mutate(K_s = K / 86400)
+X <- X %>% mutate(V_dep = K_s * depth * 1000)
+#write.csv(X, file="MesosRemovalRAW.csv", row.names = FALSE)
+
+Raw <- X %>% group_by(Trtmt) %>% summarise(Removal = mean(K), se = sd(K)/sqrt(n()))
+Raw_Size <- X %>% group_by(Trtmt,Size,Target) %>% summarise(Removal = mean(K), se = sd(K)/sqrt(n()))
+
+```
