@@ -16,7 +16,7 @@ Here we clean our data and prepare dataframes/.csv files for statistical analysi
 
 In addition, this script incorporates additional relevant data from the experiment, drawn from the "/Files" directory. This includes the volume of water filtered from each sample, as well as ancillary data (Temp, pH, water velocity, nutrient conc., etc.)
 
-```{r Directory + Packages}
+```{r Directory + Packages, echo=T, message=F}
 knitr::opts_chunk$set(echo = TRUE)
 rm(list=objects())
 this.dir = dirname(rstudioapi::getActiveDocumentContext()$path)
@@ -217,18 +217,17 @@ Data.BKT <- Data.BKT %>% subset(Target == Rel.soln & Run != 15 & Run != 13)
 Data.BKT <- Data.BKT %>% mutate(GC.mL = (Concentration*1000)/(4*100))
 
 #Export everything as .csv files to "Files" directory
-?write.csv
 write.csv(Data.BKD, paste0(files.dir,"/LeafMesos-BKD.csv"))
 write.csv(Data.C, paste0(files.dir,"/LeafMesos-Controls.csv"))
 write.csv(Data.BKT, paste0(files.dir,"/LeafMesos-ReleaseSolution.csv"))
 write.csv(Data.NC, paste0(files.dir,"/LeafMesos-Mesoscosms.csv"))
 ```
 
-# 2. Data Analysis + Figure Generation
+# 2. Data Analysis
 
 Import packages, function definitions, color schemes, and themes for ggplot2 objects.
 
-```{r Directories + Packages}
+```{r Directories + Packages, echo=T, message=F}
 library(ggplot2)
 library(plyr)
 library(dplyr)
@@ -255,6 +254,7 @@ library(patchwork)
 library(car)
 library(gridExtra)
 library(magrittr)
+library(gridExtra)
 rm(list=objects())
 
 this.dir = dirname(rstudioapi::getActiveDocumentContext()$path)
@@ -275,8 +275,6 @@ facetColor <- function(plot,colors) {
     g$grobs[[i]]$grobs[[1]]$children[[j]]$gp$fill <- fills[k]
     k <- k+1
   }
-  grid.draw(g)
-  
   return(g)
 }
 
@@ -403,14 +401,19 @@ Mesos.prop$Treatment = factor(Mesos.prop$Treatment, levels=c("ETO", "DOC", "NCL"
 # Proportion data can be summarized by averaging
 Mesos.Comb <- Mesos.prop %>% 
   group_by(Time.hr, Target, Size, Treatment) %>% 
-  summarise(prop = mean(prop), Gc.mesocosm = mean(Gc.mesocosm)) 
+  dplyr::summarise(prop = sum(prop)/4, Gc.mesocosm = sum(Gc.mesocosm)/4) %>%
+  mutate(Gc.mesocosm = ifelse(Treatment=="DOC", (4/3)*Gc.mesocosm, Gc.mesocosm)) %>% 
+  mutate(prop = ifelse(Treatment=="DOC", (4/3)*prop, prop)) %>% 
+  #Means for DOC treatment are adjust because n=3, not n=4
+  suppressMessages()
+
 #Set order of treatment variables
 Mesos.Comb$Treatment = factor(Mesos.Comb$Treatment, levels=c("ETO", "DOC","NCL","NCH","BFL","BFH"))
 ```
 
-Now, we run our statistical analyses.
+Now, we run our main statistical analysis.
 
-```{r Stats}
+```{r Step 2}
 #Change time to days, so that units for removal will be /day
 Mesos <- Mesos %>% mutate(Time.days = Time.hr/24)
 
@@ -504,13 +507,13 @@ Fit.plot.Sthd <- ggplot(fit %>% subset(Target == "STHD"), aes(x=Time.hr, y=LNGc.
   theme(strip.background =element_rect(fill="white"))+
   theme(panel.spacing = unit(1, "lines"))
 #Add colors to facet grid
-g <- facetColor(Fit.plot.Sthd,c("#E8CDE9","#E8CDE9","#E8CDE9","#E8CDE9",p7))
+g <- facetColor(Fit.plot.Sthd, c("#E8CDE9","#E8CDE9","#E8CDE9","#E8CDE9",p7))
 ggsave(filename=paste0(plots.dir,"/ModelFit_Sthd.png"), g, width = 14, height = 12, units = c("in"))
 
 #Fits looks good
 
 #Generate the data for Table 3
-tab3 <- tidy(anova(mixed.mod1)) 
+tab3 <- tidy(anova(mixed.mod)) 
 tab3
 
 
@@ -519,9 +522,9 @@ tab3
 # We apply emtrends to estimate the slope of "LN.Gc" according to the numerical covariate "Time.days"
 # This gives us an estimate of removal (in /day) according to our categorical predictors (Treatment, eDNA particle size, and Target organism)
 
-Treatment <- emtrends(mixed.mod1,"Treatment", var = "Time.days") 
-Size <- emtrends(mixed.mod1,"Size", var = "Time.days") 
-Target <- emtrends(mixed.mod1,"Target", var = "Time.days")
+Treatment <- emtrends(mixed.mod,"Treatment", var = "Time.days") 
+Size <- emtrends(mixed.mod,"Size", var = "Time.days") 
+Target <- emtrends(mixed.mod,"Target", var = "Time.days")
 #Interactions are significant here, so be careful interpreting these results.
 #In the text, we present these results simultaneously with the results from the
 # full model, so as not to misrepresent the complexity of the interactions. 
@@ -544,7 +547,7 @@ Target_pairwise <- pairs(Target) %>% as.data.frame()
 
 
 #Separate by treatment and size
-Treatment_Size <- emtrends(mixed.mod1, c("Treatment","Size"), var = "Time.days")
+Treatment_Size <- emtrends(mixed.mod, c("Treatment","Size"), var = "Time.days")
 Treatment_Size
 
 pairs(Treatment_Size, by="Size")
@@ -553,14 +556,14 @@ pairs(Treatment_Size, by="Treatment")
 Treatment_Size.Slopes <- as.data.frame(Treatment_Size)
 
 #Separate by size and target
-Target_Size <- emtrends(mixed.mod1, c("Target", "Size"), var = "Time.days")
+Target_Size <- emtrends(mixed.mod, c("Target", "Size"), var = "Time.days")
 Target_Size
 pairs(Target_Size)
 
 Target_Size.Slopes <- as.data.frame(Target_Size)
 
 #Separate by target and treatment
-Target_Treatment <- emtrends(mixed.mod1, c("Target", "Treatment"), var = "Time.days")
+Target_Treatment <- emtrends(mixed.mod, c("Target", "Treatment"), var = "Time.days")
 Target_Treatment.Slopes <- as.data.frame(Target_Treatment)
 
 pairs(Target_Treatment, by="Target")
@@ -569,7 +572,7 @@ pairs(Target_Treatment, by="Treatment")
 
 #Lastly, look at removal based on all three factors
 #Most accurate comparison due to interactions between the three. 
-Final <- emtrends(mixed.mod1,c("Treatment","Size","Target"), var = "Time.days")
+Final <- emtrends(mixed.mod,c("Treatment","Size","Target"), var = "Time.days")
 Final
 
 Final.Slopes <- as.data.frame(Final)
@@ -577,8 +580,336 @@ Final.Slopes
 
 #Pairwise Comparisons for D)
 pairs(Final, by=c("Size","Target"))
-plot(Final, by=c("Size","Target"), comparisons=T)
 
 write.csv(Final.Slopes, file=paste0(files.dir,"/MesosRemovalMODEL.csv"), row.names=F)
+
+```
+
+# 3. Figures
+
+Now, we plot the figures presented in the manuscript, including the supplementary figures.
+
+```{r Step 3, echo=F, warning=F}
+# Fig 1 : No graphical elements, constructed in powerpoint
+
+#Fig 2 : Average PSD w/ Proportion inset
+
+headernames <- c(
+  `CARP` = "Carp",
+  `STHD` = "Steelhead",
+  `ETO` = str_wrap("No Leaves",15),
+  `DOC` = str_wrap("Dissolved Organic Carbon",15),
+  `NCH` = str_wrap("High Leaves",15),
+  `NCL` = str_wrap("Low Leaves",15),
+  `BFH` = str_wrap("High Leaves + Biofilm",15),
+  `BFL` = str_wrap("Low Leaves + Biofilm",15)
+)
+#Reset orders
+Mesos.Comb$Treatment = factor(Mesos.Comb$Treatment, levels=c("ETO", "DOC","NCL","NCH","BFL","BFH"))
+
+#Gene Copies PSD
+Avg.GC <- ggplot(Mesos.Comb, aes(x=Time.hr, y=Gc.mesocosm, fill = interaction(Size, Target, sep = ":" ))) +
+  geom_area(size =0.5 ,colour="black", outline.type="full")+
+  scale_fill_manual(values=c("#009AD0","#B7ECFF","#BD62CC","#E8CDE9"), labels=c('0.4 μm', '1.2 μm', '0.4 μm', '1.2 μm'))+
+  theme_bw()+theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+  ylab(expression(Average~Gene~Copies))+
+  xlab(expression(Time~(hours)))+
+  theme(axis.text.y=element_text(size=10,color="black"))+
+  theme(axis.text.x=element_text(size=10,color="black"))+
+  theme(axis.title.x=element_text(size=14,color="black"))+
+  theme(axis.title.y=element_text(size=14,color="black"))+
+  scale_y_continuous(labels = scales::comma, position = "right")+
+  facet_grid(Target~Treatment, switch="y", labeller = as_labeller(headernames), scales="free_y")+
+  theme(strip.text.x = element_text(size=10),
+        strip.text.y = element_text(size=10))+
+  theme(panel.spacing = unit(0.5, "lines"))+
+  labs(fill="Legend")
+
+#Proportions PSD
+AVG.PSD <- ggplot(Mesos.Comb, aes(x=Time.hr, y=prop, fill = interaction(Size, Target, sep = ":" ))) +
+  geom_area(size =0.5 ,colour="black", outline.type="full")+
+  scale_fill_manual(values=c("#009AD0","#B7ECFF","#BD62CC","#E8CDE9"), guide="none")+
+  theme_bw()+
+  theme_bw()+theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+  ylab(expression(Proportion))+
+  theme(axis.text.y=element_text(size=10,color="black"))+
+  theme(axis.text.x=element_text(size=10,color="black"))+
+  theme(axis.title.x=element_text(size=14,color="black"))+
+  theme(axis.title.y=element_text(size=14,color="black"))+
+  scale_y_continuous(labels = scales::comma, position = "right")+
+  facet_grid(Target~Treatment, switch="y", labeller = as_labeller(headernames), scales="free_y")+
+  theme(strip.text.x = element_text(size=10),
+        strip.text.y = element_text(size=10))+
+  theme(panel.spacing = unit(0.5, "lines"))+
+  labs(fill="Legend")
+
+#Now combine the two, with the second as an inset plot
+
+## A function to plot the inset 
+get_inset <- function(df){
+  p <- ggplot(df, aes(x=Time.hr, y=prop, fill = interaction(Size, Target, sep = ":" ))) +
+    geom_area(size =0.5 ,colour="black", outline.type="full")+
+    scale_fill_manual(values=c("#009AD0","#B7ECFF","#BD62CC","#E8CDE9"), guide="none")+
+    theme_bw(base_size=9)+
+    theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+    theme(axis.text.y=element_text(size=rel(0.9),color="black"))+
+    theme(axis.text.x=element_text(size=rel(0.9),color="black"))+
+    theme(axis.title.x=element_blank())+
+    ylab(expression(Proportion))+
+    theme(axis.title.y=element_text(size=rel(0.9),color="black"))
+  q <- ggplot(df, aes(x=Time.hr, y=prop, fill = interaction(Size, Target, sep = ":" ))) +
+    geom_area(size =0.5 ,colour="black", outline.type="full")+
+    scale_fill_manual(values=c("#BD62CC","#E8CDE9"), guide="none")+
+    theme_bw(base_size=9)+
+    theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+    theme(axis.text.y=element_text(size=rel(0.9),color="black"))+
+    theme(axis.text.x=element_text(size=rel(0.9),color="black"))+
+    theme(axis.title.x=element_blank())+
+    ylab(expression(Proportion))+
+    theme(axis.title.y=element_text(rel(0.9),color="black"))
+  if(first(df$Target)=="CARP")
+    return(p)
+  else
+    return(q)
+}
+
+insets <- dlply(Mesos.Comb, c("Target", "Treatment"), function(d){
+    temp <- ifelse(range(d$Gc.mesocosm[2])>1000000, 3800000,750000) #best method I could think of for placing plots
+    annotation_custom2(grob= ggplotGrob(get_inset(d)),
+                       data = data.frame(Gc.mesocosm = min(d$Gc.mesocosm), Size=first(d$Size), Time.hr = min(d$Time.hr),
+                                       Target=unique(d$Target),
+                                       Treatment=unique(d$Treatment)),
+                     xmin=10, xmax=Inf, ymin=temp[1], ymax=Inf)
+})
+PSD_plot <- Avg.GC + insets
+PSD_plot <- facetColor(PSD_plot,p6)
+
+ggsave(filename=paste0(plots.dir,"/Fig2.png") , PSD_plot, width = 14, height =7.5, units = c("in"))
+
+knitr::include_graphics(paste0(plots.dir,"/Fig2.png"))
+
+# Fig. 3 : Removal Curves for each mesocosm
+
+headernames <- c(
+  `0.4:CARP` = "Carp - 0.4 μm",
+  `1.2:CARP` = "Carp - 1.2 μm",
+  `1.2:STHD` = "Steelhead - 1.2 μm",
+  `0.4:STHD` = "Steelhead - 0.4 μm",
+  `ETO` = str_wrap("No Leaves",15),
+  `DOC` = str_wrap("Dissolved Organic Carbon",15),
+  `NCH` = str_wrap("High Leaves",15),
+  `NCL` = str_wrap("Low Leaves",15),
+  `BFH` = str_wrap("High Leaves + Biofilm",15),
+  `BFL` = str_wrap("Low Leaves + Biofilm",15)
+  
+)
+
+Removal.Plot <- ggplot(Mesos, aes(x=Time.hr, y=LNGc.meso, fill = interaction(Treatment, Size, Target, sep = ":" ))) +
+  geom_smooth(method='lm', se=F, size=0.6, color="black", aes(Time.hr, LNGc.meso, fill=Row), inherit.aes = F)+
+  geom_point(size=5, shape=21, color="black", stroke=0.75)+
+  theme_bw()+theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+  scale_fill_manual(values=c("#dee2e6","#adb5bd","#495057","#212529",p7.5,p8.5,p7.5,p8.5))+
+  scale_linetype_manual(values=c("solid","dashed"))+
+  scale_color_manual(values=c("#dee2e6","#adb5bd","#495057","#212529"))+
+  ylab(expression(ln(eDNA~Gene~Copies~mesocosm^"-1")))+
+  xlab(expression(Time~(hours)))+
+  theme(axis.text.y=element_text(size=12,color="black"))+
+  theme(axis.text.x=element_text(size=12,color="black"))+
+  theme(axis.title.x=element_text(size=16,color="black"))+
+  theme(axis.title.y=element_text(size=16,color="black"))+
+  theme(legend.position="none")+
+  scale_y_continuous(expand=c(0,0),limits=c(6,17), position = "right")+
+  facet_grid(Treatment~interaction(Size, Target, sep = ":" ),switch = "y", labeller = as_labeller(headernames))
+Removal.Plot <- facetColor(Removal.Plot, c(p11, p9.5))
+
+ggsave(paste0(plots.dir,"/Fig3.png"), Removal.Plot, width = 12, height = 9, units=c("in"))
+
+knitr::include_graphics(paste0(plots.dir,"/Fig3.png"))
+
+# Fig. 4 : Summary of eDNA Removal Rates 
+
+## Panel A
+
+headernames <- c(
+  `CARP` = "Carp",
+  `STHD` = "Steelhead",
+  `1.2` = "1.2 μm",
+  `0.4` ="0.4 μm"
+)
+
+boxlabels <- c(str_wrap("No Lvs",6),
+               str_wrap("DOC",15),
+               str_wrap("Low Lvs",6),
+               str_wrap("High Lvs",6),
+               str_wrap("Low Lvs +BF",6),
+               str_wrap("High Lvs +BF",6))
+
+#Set Orders again
+Treatment.Slopes$Treatment = factor(Treatment.Slopes$Treatment, levels=c("ETO", "DOC","NCL","NCH","BFL","BFH"))
+
+Treatment.Slopes$Time.days.trend <- Treatment.Slopes$Time.days.trend *-1
+PanelA <- ggplot(Treatment.Slopes, aes(x=Treatment, y=Time.days.trend, fill=Treatment)) + 
+  geom_bar(color="black", stat = "identity",width = 0.8, position = "identity")+
+  scale_fill_manual(values=p9)+
+  geom_errorbar(aes(ymin=Time.days.trend-SE, ymax=Time.days.trend+SE), width=.25,
+                position=position_dodge(.9))+
+  theme_bw()+theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+  ylab(expression(Removal~rate~(day^"-1")))+
+  scale_y_continuous(limits=c(0,5.5),position = "left")+
+  scale_x_discrete(labels=boxlabels)+
+  xlab(expression(Treatment))+
+  theme(axis.text.y=element_text(size=16,color="black"))+
+  theme(axis.text.x=element_text(size=12,color="black"))+
+  theme(axis.title.x=element_text(size=18,color="black"))+
+  theme(axis.title.y=element_text(size=18,color="black"))+
+  theme(strip.background =element_rect(fill="white"))+
+  theme(legend.position="none")+
+  theme(strip.text.x = element_text(size=18),
+        strip.text.y = element_text(size=18))+
+  geom_signif(comparisons = list(c("ETO","ETO"),c("DOC","DOC"),c("NCL","NCL"),c("NCH","NCH"),c("BFL","BFL"),c("BFH","BFH")),
+              map_signif_level = FALSE, 
+              textsize = 6, 
+              annotations = c("ab","a","a","a","bc","c"),
+              y_position = c(3.2,2.6,3,3,4,4.2),
+              tip_length = 0.1
+              )
+
+## Panel B
+
+Treatment_Size.Slopes$Time.days.trend <- Treatment_Size.Slopes$Time.days.trend *-1
+
+annotation_df <- data.frame(
+  Size = c("0.4","0.4","1.2","1.2","1.2","1.2","1.2","1.2"),
+  start = c("BFH","ETO","DOC","NCH","NCL","BFH","ETO","BFL"),
+  end =   c("BFL","NCH","DOC","NCH","NCL","BFH","ETO","BFL"),
+  y = c(4.9, 3.5,2.3,2.9,3.1,3.8,3.5,3.7),
+  label = c("b"  ,"a"  ,"a"  ,"b","bc","d" ,"bcd","c")
+)
+
+#Orders
+Treatment_Size.Slopes$Treatment = factor(Treatment_Size.Slopes$Treatment, levels=c("ETO", "DOC","NCL","NCH","BFL","BFH"))
+
+
+PanelB <- ggplot(Treatment_Size.Slopes, aes(x=Treatment, y=Time.days.trend,fill=interaction(Treatment, Size, sep = ":"),)) + 
+  geom_bar(color="black", stat = "identity", width = 0.8, position = "identity")+
+  scale_fill_manual(values=p9.5)+
+  geom_errorbar(aes(ymin=Time.days.trend-SE, ymax=Time.days.trend+SE), width=.25,
+                position=position_dodge(.9))+
+  theme_bw()+theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+  ylab(expression(Removal~rate~(day^"-1")))+
+  scale_y_continuous(position = "left", limits = c(0,5.5))+
+  scale_x_discrete(labels = boxlabels)+
+  xlab(expression(Treatment))+
+  theme(axis.text.y=element_text(size=16,color="black"))+
+  theme(axis.text.x=element_text(size=12,color="black"))+
+  theme(axis.title.x=element_text(size=18,color="black"))+
+  theme(axis.title.y=element_text(size=18,color="black"))+
+  theme(strip.background =element_rect(fill="white"))+
+  theme(legend.position="none")+
+  theme(strip.text.x = element_text(size=18),
+        strip.text.y = element_text(size=18))+
+  geom_signif(
+          data = annotation_df,
+          aes(xmin = start, xmax = end, annotations = label, y_position = y),
+          textsize =5, vjust = -0.2,
+          manual = TRUE, inherit.aes = FALSE
+        )+
+  facet_wrap(~Size, nrow=1, labeller = as_labeller(headernames))
+
+## Panel C
+
+headernames <- c(
+  `CARP` = "Carp",
+  `STHD` = "Steelhead",
+  `1.2` = "1.2 μm",
+  `0.4` ="0.4 μm"
+)
+
+annotation_df <- data.frame(
+  Target = c("CARP","CARP","STHD","STHD"),
+  start = c("0.4","1.2","0.4","1.2"),
+  end =   c("0.4","1.2","0.4","1.2"),
+  y = c(3.2,3.35,3.8,2.7),
+  label = c("ab","a","c","b")
+)
+
+Target_Size.Slopes$Time.days.trend <- Target_Size.Slopes$Time.days.trend *-1
+PanelC <- ggplot(Target_Size.Slopes, aes(x=Size, y=Time.days.trend, fill=interaction(Target, Size, sep = ":"),)) + 
+  geom_bar(color="black", stat = "identity", width = 0.8, position = "identity")+
+  scale_fill_manual(values=c("#009AD0","#BD62CC","#B7ECFF","#E8CDE9"), labels=c('0.4 μm', '1.2 μm', '0.4 μm', '1.2 μm'))+
+  geom_errorbar(aes(ymin=Time.days.trend-SE, ymax=Time.days.trend+SE), width=.25,
+                position=position_dodge(.9))+
+  theme_bw()+theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+  ylab(expression(Removal~rate~(day^"-1")))+
+  scale_y_continuous(position = "left", limits = c(0,5.5))+
+  scale_x_discrete(labels = headernames)+
+  xlab(expression(Size))+
+  theme(axis.text.y=element_text(size=16,color="black"))+
+  theme(axis.text.x=element_text(size=12,color="black"))+
+  theme(axis.title.x=element_text(size=18,color="black"))+
+  theme(axis.title.y=element_text(size=18,color="black"))+
+  theme(strip.background =element_rect(fill="white"))+
+  theme(legend.position="none")+
+  theme(strip.text.x = element_text(size=18),
+        strip.text.y = element_text(size=18))+
+  geom_signif(
+    data = annotation_df,
+    aes(xmin = start, xmax = end, annotations = label, y_position = y),
+    textsize =6, vjust = -0.2,
+    manual = TRUE, inherit.aes = FALSE)+
+  facet_wrap(~Target, nrow=1, labeller = as_labeller(headernames))
+
+## Panel D
+
+Final.Slopes$Time.days.trend <- Final.Slopes$Time.days.trend *-1
+
+Final.Slopes$Treatment = factor(Final.Slopes$Treatment, levels=c("ETO", "DOC","NCL","NCH","BFL","BFH"))
+
+
+annotation_df <- data.frame(
+  Target = c("CARP","CARP","CARP","CARP","CARP","CARP","STHD","STHD","STHD","STHD","STHD","STHD","STHD","STHD","STHD","STHD","STHD","STHD","CARP","CARP","CARP","CARP","CARP","CARP"),
+  Size =   c("1.2" ,"1.2" ,"1.2" ,"1.2" ,"1.2" ,"1.2" ,"1.2" ,"1.2" ,"1.2" ,"1.2" ,"1.2" ,"1.2" ,"0.4" ,"0.4" ,"0.4" ,"0.4" ,"0.4" ,"0.4" ,"0.4","0.4","0.4","0.4","0.4","0.4"),
+  start =  c("DOC" ,"NCH" ,"NCL" ,"ETO" ,"BFL" ,"BFH" ,"DOC" ,"NCH" ,"NCL" ,"ETO" ,"BFL" ,"BFH" ,"ETO" ,"DOC" ,"NCL" ,"NCH" ,"BFL" ,"BFH" ,"ETO","DOC","NCL","NCH","BFL","BFH"),
+  end =    c("DOC" ,"NCH" ,"NCL" ,"ETO" ,"BFL" ,"BFH" ,"DOC" ,"NCH" ,"NCL" ,"ETO" ,"BFL" ,"BFH" ,"ETO" ,"DOC" ,"NCL" ,"NCH" ,"BFL" ,"BFH" ,"ETO","DOC","NCL","NCH","BFL","BFH"),
+  y = c(2.4,3.1,3.23,3.9,4.2,4.3,2.2,2.8,3,2.7,3.3,3.4,3.7,3.6,3.4,3.4,4.9,5.3,2.9,2.9,2.9,3.0,4.1,4.4),
+  label =  c("a"   ,"ab"  ,"b"  ,"bc"   ,"c"   ,"c"   ,"a"   ,"ab"  ,"b"   ,"ab"  ,"b"   ,"b"   ,"ab"   ,"a"   ,"a"   ,"a"   ,"bc"  ,"c"  ,"a"  ,"a"  ,"a"  ,"a"  ,"ab" ,"b")
+)
+
+PanelD <- ggplot(Final.Slopes, aes(x=Treatment, y=Time.days.trend, fill=interaction(Treatment, Size, sep = ":"))) + 
+  geom_bar(color="black", stat = "identity", width = 0.8, position = "identity")+
+  scale_fill_manual(values=p9.5)+
+  geom_errorbar(aes(ymin=Time.days.trend-SE, ymax=Time.days.trend+SE), width=.25,
+                position=position_dodge(.9))+
+  theme_bw()+theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+  ylab(expression(Removal~rate~(day^"-1")))+
+  scale_y_continuous(position = "left", limits = c(0,5.5))+
+  scale_x_discrete(labels = boxlabels)+
+  xlab(expression(Treatment))+
+  theme(axis.text.y=element_text(size=16,color="black"))+
+  theme(axis.text.x=element_text(size=12,color="black"))+
+  theme(axis.title.x=element_text(size=18,color="black"))+
+  theme(axis.title.y=element_text(size=18,color="black"))+
+  theme(strip.background =element_rect(fill="white"))+
+  theme(legend.position="none")+
+  theme(strip.text.x = element_text(size=18),
+        strip.text.y = element_text(size=18))+
+  facet_grid(Target~Size, labeller = as_labeller(headernames))+
+  geom_signif(
+    data = annotation_df,
+    aes(xmin = start, xmax = end, annotations = label, y_position = y),
+    textsize =5, vjust = -0.2,
+    manual = TRUE, inherit.aes = FALSE
+  )
+
+
+## Combined Panels
+
+RemovalStack <- (wrap_elements(PanelA, clip=F) + wrap_elements(PanelB %>% facetColor(c("#999696","azure3")), clip=F)) / (wrap_elements(PanelC %>% facetColor(c("#B7ECFF","#E8CDE9"))) + wrap_elements(PanelD %>% facetColor(c("#999696","azure3","#B7ECFF","#E8CDE9"))))
+
+ggsave(filename=paste0(plots.dir,"/Fig4.png"), RemovalStack, width = 15, height = 18, units = c("in"))
+
+knitr::include_graphics(paste0(plots.dir,"/Fig4.png"))
+
+# Fig. 5 : Metabolism Data
 
 ```
