@@ -16,7 +16,7 @@ Here we clean our data and prepare dataframes/.csv files for statistical analysi
 
 In addition, this script incorporates additional relevant data from the experiment, drawn from the "/Files" directory. This includes the volume of water filtered from each sample, as well as ancillary data (Temp, pH, water velocity, nutrient conc., etc.)
 
-```{r setup}
+```{r Directory + Packages}
 knitr::opts_chunk$set(echo = TRUE)
 rm(list=objects())
 this.dir = dirname(rstudioapi::getActiveDocumentContext()$path)
@@ -128,7 +128,7 @@ Data.NC <- Data.NC %>% mutate(Concentration = Concentration * as.double(Dilution
 
 x <- Data.NC %>% 
   group_by(Sample, Target) %>% 
-  summarize(Well = "*", 
+  dplyr::summarize(Well = "*", 
             Target = first(Target),
             CopiesPer20uLWell = mean(CopiesPer20uLWell), 
             Positives = sum(Positives), 
@@ -228,7 +228,7 @@ write.csv(Data.NC, paste0(files.dir,"/LeafMesos-Mesoscosms.csv"))
 
 Import packages, function definitions, color schemes, and themes for ggplot2 objects.
 
-```{r setup}
+```{r Directories + Packages}
 library(ggplot2)
 library(plyr)
 library(dplyr)
@@ -315,7 +315,7 @@ p11 <- c("#009AD0","#B7ECFF","#BD62CC","#E8CDE9")
 
 ```
 
-Setup
+Import and prepare data.
 
 ```{r Step 1}
 #Load datafile   
@@ -364,16 +364,221 @@ X <- Mesos %>%
   }) 
 depthkey <- Mesos %>% 
   group_by(Meso.Num) %>% 
-  summarise(depth = mean(depth.m))
+  dplyr::summarise(depth = mean(depth.m))
 X$Trtmt <- X$Treatment
 X = subset(X,select = -Treatment)
 X <- inner_join(X, depthkey, by= "Meso.Num")
 
 X <- X %>% mutate(K_s = K / 86400)
 X <- X %>% mutate(V_dep = K_s * depth * 1000)
-#write.csv(X, file="MesosRemovalRAW.csv", row.names = FALSE)
+write.csv(X, paste0(files.dir,"/MesosRemovalRAW.csv"), row.names = FALSE)
 
-Raw <- X %>% group_by(Trtmt) %>% summarise(Removal = mean(K), se = sd(K)/sqrt(n()))
-Raw_Size <- X %>% group_by(Trtmt,Size,Target) %>% summarise(Removal = mean(K), se = sd(K)/sqrt(n()))
+Raw <- X %>% 
+  group_by(Trtmt) %>% 
+  dplyr::summarise(Removal = mean(K), se = sd(K)/sqrt(n())) %>%
+  suppressMessages()
+  
+Raw_Size <- X %>% 
+  group_by(Trtmt,Size,Target) %>% 
+  dplyr::summarise(Removal = mean(K), se = sd(K)/sqrt(n())) %>%
+  suppressMessages()
+
+# For values below the LOD, set conc. to 1/2 the limit of detection.
+# These values represent a small proportion of the total data, so we excluded them from the statistical analyses
+Mesos.Zeros <- Mesos.Zeros %>% 
+  mutate(Gc.mesocosm = ifelse(Target == "CARP", 0.475*Meso.Volume.mL, 0.4*Meso.Volume.mL))
+Mesos.Zeros$LNGc.meso = log(Mesos.Zeros$Gc.mesocosm) 
+Mesos.Zeros$Well <- factor(Mesos.Zeros$Well, levels = c("*","%"))
+
+# Here we calculate the proportion of each size class within a sample
+Mesos.Sum <- rbind(Mesos[c(1:36)], Mesos.Zeros) %>% 
+  group_by(Time, Target, Meso.Num) %>% 
+  dplyr::summarise(n = sum(Gc.mesocosm)) %>% 
+  suppressMessages()
+Mesos.prop <- inner_join(rbind(Mesos[c(1:36)], Mesos.Zeros), Mesos.Sum, by=c("Time","Target","Meso.Num"))
+Mesos.prop <- Mesos.prop %>% mutate(prop = Gc.mesocosm / n)
+#Set order of treatment variables
+Mesos.prop$Treatment = factor(Mesos.prop$Treatment, levels=c("ETO", "DOC", "NCL","NCH","BFL","BFH"))
+
+# Proportion data can be summarized by averaging
+Mesos.Comb <- Mesos.prop %>% 
+  group_by(Time.hr, Target, Size, Treatment) %>% 
+  summarise(prop = mean(prop), Gc.mesocosm = mean(Gc.mesocosm)) 
+#Set order of treatment variables
+Mesos.Comb$Treatment = factor(Mesos.Comb$Treatment, levels=c("ETO", "DOC","NCL","NCH","BFL","BFH"))
+```
+
+Now, we run our statistical analyses.
+
+```{r Stats}
+#Change time to days, so that units for removal will be /day
+Mesos <- Mesos %>% mutate(Time.days = Time.hr/24)
+
+#Mixed-effect/hierarchical model, b.c. of repeated measures within mesocosms
+
+mixed.mod <- lmer(LNGc.meso ~ Time.days:Treatment*Size*Target + 
+                     (1 + Time.days|Meso.Num), data = Mesos, REML = FALSE)
+
+#Examine residual plots
+MixedResids <- resid_panel(mixed.mod, plots = "all")
+MixedResids
+#Response vs. Predicted is strong, and QQ plot looks fine. 
+#Roughly normal distribution of residuals, although low outliers exist
+shapiro.test(resid(mixed.mod)) # Shapiro test confirms this
+
+ggsave(filename=paste0(plots.dir,"/MixedModelEval.png"), MixedResids, width = 8, height =6, units = c("in"))
+
+#Model Summary
+summary(mixed.mod)
+
+#Export coefficients from the fixed portion of model
+fixed_effects <- fixef(mixed.mod)
+random_effects <- ranef(mixed.mod)$Meso.Num
+
+# Look at model fit for each mesocosm
+fit <- Mesos
+fit$resids <- resid(mixed.mod)
+fit <- fit %>% mutate(Conditional_Prediction = LNGc.meso - resids)
+fit$Marginal_Prediction = predict(mixed.mod, re.form=NA)
+
+# Plot
+headernames <- c(
+  `CARP` = "Carp",
+  `STHD` = "Steelhead",
+  `ETO` = str_wrap("No Leaves",15),
+  `DOC` = str_wrap("Dissolved Organic Carbon",15),
+  `NCH` = str_wrap("High Leaves",15),
+  `NCL` = str_wrap("Low Leaves",15),
+  `BFH` = str_wrap("High Leaves + Biofilm",15),
+  `BFL` = str_wrap("Low Leaves + Biofilm",15),
+  `1` = "Mesocosm 1",
+  `2` = "Mesocosm 2",
+  `3` = "Mesocosm 3",
+  `4` = "Mesocosm 4"
+)
+
+Fit.plot.Carp <- ggplot(fit %>% subset(Target == "CARP"), aes(x=Time.hr, y=LNGc.meso, fill=interaction(Treatment,Size)))+
+  geom_point(size=5, shape=21, stroke=0.75)+
+  geom_line(aes(x = Time.hr, y = Conditional_Prediction, color=Size, linetype="dashed"))+
+  theme_bw()+theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+  scale_fill_manual(values=p9.5)+
+  scale_color_manual(values=c("black","black"))+
+  scale_linetype_manual(values=c("solid","dashed"))+
+  ylab(expression(ln(eDNA~Gene~Copies~mesocosm^"-1")))+
+  xlab(expression(Time~(hours)))+
+  theme(axis.text.y=element_text(size=14,color="black"))+
+  theme(axis.text.x=element_text(size=14,color="black"))+
+  theme(axis.title.x=element_text(size=16,color="black"))+
+  theme(axis.title.y=element_text(size=16,color="black"))+
+  theme(legend.position="none")+
+  scale_y_continuous(expand=c(0,0),limits=c(6,16), position = "right")+
+  ###These lines facet the graph
+  facet_grid(Treatment~Row, switch="y", labeller = as_labeller(headernames))+
+  theme(strip.text.x = element_text(size=16),
+        strip.text.y = element_text(size=16))+
+  theme(strip.background =element_rect(fill="white"))+
+  theme(panel.spacing = unit(1, "lines"))
+#Add colors to facet grid
+g <- facetColor(Fit.plot.Carp,c("#B7ECFF","#B7ECFF","#B7ECFF","#B7ECFF",p7))
+ggsave(filename=paste0(plots.dir,"/ModelFit_Carp.png"), g, width = 14, height = 12, units = c("in"))
+
+Fit.plot.Sthd <- ggplot(fit %>% subset(Target == "STHD"), aes(x=Time.hr, y=LNGc.meso, fill=interaction(Treatment,Size)))+
+  geom_point(size=5, shape=21, stroke=0.75)+
+  geom_line(aes(x = Time.hr, y = Conditional_Prediction, color=Size, linetype="dashed"))+
+  theme_bw()+theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+  scale_fill_manual(values=p9.5)+
+  scale_color_manual(values=c("black","black"))+
+  scale_linetype_manual(values=c("solid","dashed"))+
+  ylab(expression(ln(eDNA~Gene~Copies~mesocosm^"-1")))+
+  xlab(expression(Time~(hours)))+
+  theme(axis.text.y=element_text(size=14,color="black"))+
+  theme(axis.text.x=element_text(size=14,color="black"))+
+  theme(axis.title.x=element_text(size=16,color="black"))+
+  theme(axis.title.y=element_text(size=16,color="black"))+
+  theme(legend.position="none")+
+  scale_y_continuous(expand=c(0,0),limits=c(6,16), position = "right")+
+  ###These lines facet the graph
+  facet_grid(Treatment~Row, switch="y", labeller = as_labeller(headernames))+
+  theme(strip.text.x = element_text(size=16),
+        strip.text.y = element_text(size=16))+
+  theme(strip.background =element_rect(fill="white"))+
+  theme(panel.spacing = unit(1, "lines"))
+#Add colors to facet grid
+g <- facetColor(Fit.plot.Sthd,c("#E8CDE9","#E8CDE9","#E8CDE9","#E8CDE9",p7))
+ggsave(filename=paste0(plots.dir,"/ModelFit_Sthd.png"), g, width = 14, height = 12, units = c("in"))
+
+#Fits looks good
+
+#Generate the data for Table 3
+tab3 <- tidy(anova(mixed.mod1)) 
+tab3
+
+
+#The emtrends() function uses a difference quotient to estimate 
+#the slope of a line fitted to a given variable.
+# We apply emtrends to estimate the slope of "LN.Gc" according to the numerical covariate "Time.days"
+# This gives us an estimate of removal (in /day) according to our categorical predictors (Treatment, eDNA particle size, and Target organism)
+
+Treatment <- emtrends(mixed.mod1,"Treatment", var = "Time.days") 
+Size <- emtrends(mixed.mod1,"Size", var = "Time.days") 
+Target <- emtrends(mixed.mod1,"Target", var = "Time.days")
+#Interactions are significant here, so be careful interpreting these results.
+#In the text, we present these results simultaneously with the results from the
+# full model, so as not to misrepresent the complexity of the interactions. 
+
+#Save removal estimates for barplots
+Treatment.Slopes <- as.data.frame(Treatment)
+Size.Slopes <- as.data.frame(Size)
+Target.Slopes <- as.data.frame(Target)
+
+#Pairwise post-hoc (uses a Tukey by default). 
+pairs(Treatment)
+Treatment_pairwise <- pairs(Treatment) %>% as.data.frame()
+
+pairs(Size)
+Size_pairwise <- pairs(Size) %>% as.data.frame()
+
+pairs(Target)
+Target_pairwise <- pairs(Target) %>% as.data.frame()
+
+
+
+#Separate by treatment and size
+Treatment_Size <- emtrends(mixed.mod1, c("Treatment","Size"), var = "Time.days")
+Treatment_Size
+
+pairs(Treatment_Size, by="Size")
+pairs(Treatment_Size, by="Treatment")
+
+Treatment_Size.Slopes <- as.data.frame(Treatment_Size)
+
+#Separate by size and target
+Target_Size <- emtrends(mixed.mod1, c("Target", "Size"), var = "Time.days")
+Target_Size
+pairs(Target_Size)
+
+Target_Size.Slopes <- as.data.frame(Target_Size)
+
+#Separate by target and treatment
+Target_Treatment <- emtrends(mixed.mod1, c("Target", "Treatment"), var = "Time.days")
+Target_Treatment.Slopes <- as.data.frame(Target_Treatment)
+
+pairs(Target_Treatment, by="Target")
+pairs(Target_Treatment, by="Treatment")
+
+
+#Lastly, look at removal based on all three factors
+#Most accurate comparison due to interactions between the three. 
+Final <- emtrends(mixed.mod1,c("Treatment","Size","Target"), var = "Time.days")
+Final
+
+Final.Slopes <- as.data.frame(Final)
+Final.Slopes
+
+#Pairwise Comparisons for D)
+pairs(Final, by=c("Size","Target"))
+plot(Final, by=c("Size","Target"), comparisons=T)
+
+write.csv(Final.Slopes, file=paste0(files.dir,"/MesosRemovalMODEL.csv"), row.names=F)
 
 ```
