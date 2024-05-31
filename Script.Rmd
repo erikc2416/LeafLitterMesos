@@ -10,7 +10,7 @@ output: html_document
 Here we clean our data and prepare dataframes/.csv files for statistical analysis. This section takes the raw data from the ddPCR plate files ("/Data" directory) and separates it into 4 .csv's
 
 1.  LeafMesos-BKD.csv (Background samples from mesocosms pre-release)
-2.   LeafMesos-Controls.csv (Field blanks, Extraction blanks, and +/- PCR controls)
+2.  LeafMesos-Controls.csv (Field blanks, Extraction blanks, and +/- PCR controls)
 3.  LeafMesos-ReleaseSolution.csv (eDNA source solution / buckets)
 4.  LeafMesos-Mesoscosms.csv (the release data)
 
