@@ -54,7 +54,7 @@ for (i in 1:length(list)) {
 #Remove unnecessary columns from Quantasoft outputs
 Data.Full <- Data.Full %>% select(-c(2,3,5,7,9,11:14,17:21,23:41,43:63))
 
-#Remove failed wells (identified manually by looking at 1-D plot in QuantaSoft)
+#Remove failed wells (determined manually by looking at 1-D plot in QuantaSoft)
 #Failed reactions are identified by the plate number, and the well coordinates
 failed.Rxns <- c("1.F01", "1.F02", "1.F03", "7.C02", "7.C02", "8.C07", "8.C08",
                  "8.C09", "8.F04", "8.F05", "8.F06", "8.C07", "8.C08", "8.C09",
@@ -362,12 +362,13 @@ X <- Mesos %>%
   }) 
 depthkey <- Mesos %>% 
   group_by(Meso.Num) %>% 
-  dplyr::summarise(depth = mean(depth.m))
+  dplyr::summarise(depth = mean(depth.m)) %>% 
+  suppressMessages()
 X$Trtmt <- X$Treatment
 X = subset(X,select = -Treatment)
 X <- inner_join(X, depthkey, by= "Meso.Num")
 
-X <- X %>% mutate(K_s = K / 86400)
+X <- X %>% mutate(K_s = K / (60*60*24))
 X <- X %>% mutate(V_dep = K_s * depth * 1000)
 write.csv(X, paste0(files.dir,"/MesosRemovalRAW.csv"), row.names = FALSE)
 
@@ -409,6 +410,104 @@ Mesos.Comb <- Mesos.prop %>%
 
 #Set order of treatment variables
 Mesos.Comb$Treatment = factor(Mesos.Comb$Treatment, levels=c("ETO", "DOC","NCL","NCH","BFL","BFH"))
+
+
+#Import Data from Release solution
+Rel <- read.csv(paste0(files.dir,"/LeafMesos-ReleaseSolution.csv"))
+
+#Cast to factors
+Rel$Bucket <- as.factor(Rel$Bucket)
+Rel$Size <- as.factor(Rel$Size)
+Rel$Target <- as.factor(Rel$Target)
+
+#Average
+Rel <- Rel %>% group_by(Bucket, Target, Size) %>% 
+  dplyr::summarise(GC.mL = mean(GC.mL)) %>% 
+  suppressMessages()
+
+#Get proportions 
+Rel.Prop <- Rel %>% 
+  group_by(Bucket, Target) %>% 
+  dplyr::summarise(n = sum(GC.mL)) %>% 
+  suppressMessages()
+Rel.Prop <- inner_join(Rel, Rel.Prop, by=c("Bucket", "Target"))
+Rel.Prop <- Rel.Prop %>% mutate(prop = GC.mL / n)
+
+#Check that PSD is consistent between species
+Rel.mod <- aov(prop ~ Target, data = Rel.Prop %>% subset(Size == "1.2"))
+summary(Rel.mod) # p = 0.006, so starting PSD is significantly different 
+TukeyHSD(Rel.mod) # Carp 1.2 um is about 6.5% higher than Steelhead
+
+#Prep Metabolism 
+# Set positive ER values to 0, and calculate Leaf ER based on difference between the two.
+# 0.001344 m^2 is the area of the 5 leaf disks in each tube
+Mesos <- Mesos %>% mutate(Total.ER.mg.hr = ifelse(Total.ER.mg.hr > 0, 0, Total.ER.mg.hr))
+Mesos <- Mesos %>% mutate(Water.ER.mg.hr.L = ifelse(Water.ER.mg.hr.L > 0, 0, Water.ER.mg.hr.L))
+Mesos <- Mesos %>% mutate(Leaf.ER.mg.hr.m2 = (Total.ER.mg.hr - Water.ER.mg.hr.L*0.045)/0.001344)
+Mesos <- Mesos %>% mutate(Leaf.ER.mg.hr.m2 = ifelse(Leaf.ER.mg.hr.m2 > 0, 0, Leaf.ER.mg.hr.m2))
+
+#Now calculate total Mesocosm ER rate (in mg/hr)
+#Note: each bag of leaves contained 0.077 m^2 of leaves, on average. 
+# High treatements: 6 bags, Low treatments: 3 bags
+Mesos <- Mesos %>% mutate(Mesocosm.ER.mg.hr = case_when(
+  Treatment == "ETO" | Treatment == "DOC" ~ Water.ER.mg.hr.L*Meso.Volume.mL/1000,
+  Treatment == "NCL" | Treatment == "BFL" ~ Water.ER.mg.hr.L*Meso.Volume.mL/1000+3*0.077*Leaf.ER.mg.hr.m2,
+  Treatment == "NCH" | Treatment == "BFH" ~ Water.ER.mg.hr.L*Meso.Volume.mL/1000+6*0.077*Leaf.ER.mg.hr.m2
+  )
+)
+
+#Build dataframes for analyzing ancillary varibles
+
+#For Ancillary variables collected at all time points:
+Mesos.small <- rbind(Mesos[1:36],Mesos.Zeros) %>% 
+  group_by(Time,Meso.Num) %>% 
+  dplyr::summarise(
+    Treatment=first(Treatment),
+    Time=first(Time),
+    Time.hr=first(Time.hr),
+    temp.C = first(temp.C),
+    pH = first(pH),
+    turbidity.NTU = first(turbidity.NTU)
+  ) %>% 
+  suppressMessages()
+
+#For Ancillary variables collected at T1 and T4 only
+Mesos.mid <- rbind(Mesos[1:36],Mesos.Zeros) %>% 
+  group_by(Time, Meso.Num) %>% 
+  dplyr::summarise(
+    Treatment=first(Treatment),
+    Time=first(Time),
+    Time.hr=first(Time.hr),
+    doc.mg.L = first(doc.mg.L),
+    NH4.ugN.L = first(NH4.ugN.L),
+    NO3.ugN.L = first(NO3.ugN.L),
+    SRP.ugP.L =first(SRP.ugP.L)
+  ) %>% 
+  subset(Time=="T1A" | Time=="T4") %>% 
+  suppressMessages()
+
+#For Ancillary variables colleceted only once
+Mesos.tiny <- Mesos %>% 
+  group_by(Time, Meso.Num) %>% 
+  dplyr::summarise(
+    Treatment=first(Treatment),
+    Time=first(Time),
+    Time.hr=first(Time.hr),
+    Water.ER.mg.hr.L = first(Water.ER.mg.hr.L),
+    Leaf.ER.mg.hr.m2 = first(Leaf.ER.mg.hr.m2),
+    Mesocosm.ER.mg.hr = first(Mesocosm.ER.mg.hr),
+    #also add the rest, we will need them for the correlation matrix later
+    doc.mg.L = first(doc.mg.L),
+    NH4.ugN.L = first(NH4.ugN.L),
+    NO3.ugN.L = first(NO3.ugN.L),
+    SRP.ugP.L =first(SRP.ugP.L),
+    temp.C = first(temp.C),
+    pH = first(pH),
+    turbidity.NTU = first(turbidity.NTU),
+    Treatment = first(Treatment)
+  ) %>% 
+  subset(Time=="T1A") %>% 
+  suppressMessages()
 ```
 
 Now, we run our main statistical analysis.
@@ -513,7 +612,7 @@ ggsave(filename=paste0(plots.dir,"/ModelFit_Sthd.png"), g, width = 14, height = 
 #Fits looks good
 
 #Generate the data for Table 3
-tab3 <- tidy(anova(mixed.mod)) 
+tab3 <- tidy(anova(mixed.mod)) %>% suppressMessages()
 tab3
 
 
@@ -582,6 +681,60 @@ Final.Slopes
 pairs(Final, by=c("Size","Target"))
 
 write.csv(Final.Slopes, file=paste0(files.dir,"/MesosRemovalMODEL.csv"), row.names=F)
+```
+
+Now, we perform our analyses for the ancillary data.
+
+```{r Step 3}
+#Temperature
+temp.anova <- lmer(temp.C ~ Time * Treatment + (1|Meso.Num), data = Mesos.small)
+summary(temp.anova)
+shapiro.test(resid(temp.anova)) #p = 0.108, barely normal
+leveneTest(resid(temp.anova) ~ Mesos.small$Treatment * Mesos.small$Time) #p = 0.98, homogeneous
+pairs(emmeans(temp.anova, c("Time"))) # Diel swing in temperature
+
+pairs(emmeans(temp.anova, c("Treatment"))) # No difference between treatments
+
+#pH
+pH.anova <- lmer(pH ~ Time * Treatment + (1|Meso.Num), data = Mesos.small)
+summary(pH.anova)
+shapiro.test(resid(pH.anova)) #p = 0.43
+leveneTest(resid(pH.anova) ~ Mesos.small$Treatment * Mesos.small$Time) #p = 0.18
+pairs(emmeans(pH.anova, c("Time"))) # slight increases in pH from T1-T4
+pairs(emmeans(pH.anova, c("Treatment"))) # Some treatment differences, but that's to be expected. Magnitude of difference never exceeds ~0.2 pH.
+
+#Turbidity
+turb.anova <- aov(turbidity.NTU ~ Treatment, data = Mesos.small)
+summary(turb.anova)
+TukeyHSD(turb.anova) #signif. higher for DOC mesocosms
+
+#DOC
+DOC.anova <- aov(doc.mg.L ~ Treatment, data = Mesos.mid)
+summary(DOC.anova)
+TukeyHSD(DOC.anova) #signif. higher for DOC mesocosms
+
+#NH4
+NH4.anova <- aov(NH4.ugN.L ~ Treatment, data = Mesos.mid)
+summary(NH4.anova)
+TukeyHSD(NH4.anova) #signif. higher for DOC mesocosms
+
+#NO3
+NO3.anova <- aov(NO3.ugN.L ~ Treatment, data = Mesos.mid)
+summary(NO3.anova)
+TukeyHSD(NO3.anova) #BFH signif. lower then control
+
+#SRP
+SRP.anova <- aov(SRP.ugP.L ~ Treatment, data = Mesos.mid)
+summary(SRP.anova)
+TukeyHSD(SRP.anova) #signif. higher for DOC mesocosms
+
+
+#Now do a correlation matrix with K
+df.corr<- inner_join(Mesos.tiny, X, by=c("Meso.Num"))
+df.corr$K <- -1*df.corr$K
+correlation <- rcorr(as.matrix(df.corr[c(7:14,18)], type="pearson"))
+correlation
+
 
 ```
 
@@ -589,7 +742,7 @@ write.csv(Final.Slopes, file=paste0(files.dir,"/MesosRemovalMODEL.csv"), row.nam
 
 Now, we plot the figures presented in the manuscript, including the supplementary figures.
 
-```{r Step 3, echo=F, warning=F}
+```{r Step 4, echo=F, warning=F}
 # Fig 1 : No graphical elements, constructed in powerpoint
 
 #Fig 2 : Average PSD w/ Proportion inset
@@ -719,7 +872,8 @@ Removal.Plot <- ggplot(Mesos, aes(x=Time.hr, y=LNGc.meso, fill = interaction(Tre
   theme(axis.title.y=element_text(size=16,color="black"))+
   theme(legend.position="none")+
   scale_y_continuous(expand=c(0,0),limits=c(6,17), position = "right")+
-  facet_grid(Treatment~interaction(Size, Target, sep = ":" ),switch = "y", labeller = as_labeller(headernames))
+  facet_grid(Treatment~interaction(Size, Target, sep = ":" ),switch = "y", labeller = as_labeller(headernames)) %>% 
+  suppressMessages()
 Removal.Plot <- facetColor(Removal.Plot, c(p11, p9.5))
 
 ggsave(paste0(plots.dir,"/Fig3.png"), Removal.Plot, width = 12, height = 9, units=c("in"))
@@ -783,7 +937,7 @@ annotation_df <- data.frame(
   start = c("BFH","ETO","DOC","NCH","NCL","BFH","ETO","BFL"),
   end =   c("BFL","NCH","DOC","NCH","NCL","BFH","ETO","BFL"),
   y = c(4.9, 3.5,2.3,2.9,3.1,3.8,3.5,3.7),
-  label = c("b"  ,"a"  ,"a"  ,"b","bc","d" ,"bcd","c")
+  label = c("b"  ,"a"  ,"a"  ,"b","bc","c" ,"bc","bc")
 )
 
 #Orders
@@ -910,6 +1064,61 @@ ggsave(filename=paste0(plots.dir,"/Fig4.png"), RemovalStack, width = 15, height 
 
 knitr::include_graphics(paste0(plots.dir,"/Fig4.png"))
 
-# Fig. 5 : Metabolism Data
+# Fig. 5 : Metabolism
 
+Water.ER <- Mesos.tiny %>% ggplot(aes(x=Treatment, y=-Water.ER.mg.hr.L, fill=Treatment)) + 
+  geom_boxplot(color="black", stroke=0.75) +
+  scale_fill_manual(values = p5, guide="none") + 
+  theme_bw()+theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+  ylab(expression(Water~Column~Respiration~(mg~O2~L^-1~hr^-1)))+
+  xlab(expression(Treatment))+
+  scale_y_continuous(limits = c(0,0.5))+
+  scale_x_discrete(labels = (boxlabels))+
+  geom_signif(comparisons = list(c("ETO","ETO"),c("DOC","DOC"),c("NCL","BFH")),
+              map_signif_level = FALSE, 
+              textsize = 4, 
+              annotations = c("a","b","a"),
+              y_position = c(0.08,0.46,0.2),
+              tip_length = 0.04
+  )
+
+Leaf.ER <- Mesos.tiny %>% ggplot(aes(x=Treatment, y=-Leaf.ER.mg.hr.m2, fill=Treatment)) + 
+  geom_boxplot(color="black") +
+  scale_fill_manual(values = p5, guide="none") + 
+  theme_bw()+theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+  ylab(expression(Leaf~Litter~Respiration~(mg~O2~m^-2~hr^-1)))+
+  xlab(expression(Treatment))+
+  scale_y_continuous(limits = c(0,21))+
+  scale_x_discrete(labels = (boxlabels))+
+  geom_signif(comparisons = list(c("NCL","BFH")),
+              map_signif_level = FALSE, 
+              textsize = 4, 
+              annotations = c("NS"),
+              y_position = c(18.5),
+              tip_length = 0.04
+  )
+
+Mesos.ER <- Mesos.tiny %>% ggplot(aes(x=Treatment, y=-Mesocosm.ER.mg.hr, fill=Treatment)) + 
+  geom_boxplot(color="black") +
+  scale_fill_manual(values = p5, guide="none") + 
+  theme_bw()+theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+  ylab(expression(Mesocosm~Respiration~(mg~O2~hr^-1)))+
+  xlab(expression(Treatment))+
+  scale_y_continuous(limits = c(0,12))+
+  scale_x_discrete(labels = (boxlabels))+
+  geom_signif(comparisons = list(c("ETO","ETO"),c("DOC","DOC"),c("NCL","NCL"),c("NCH","NCH"),c("BFL","BFL"),c("BFH","BFH")),
+              map_signif_level = FALSE,
+              textsize = 4,
+              annotations = c("a","c","abc","bc","ab","abc"),
+              y_position = c(1.5,11,4.2,8.2,3.4,4.5),
+              tip_length = 0.02
+  )
+
+ER.Full <- Water.ER + Leaf.ER + Mesos.ER
+
+ggsave(paste0(plots.dir,"/Fig5.png"), ER.Full, width=10, height = 5.5, units=c("in"))
+
+knitr::include_graphics(paste0(plots.dir,"/Fig5.png"))
 ```
+
+# 4. Supplementary Materials
