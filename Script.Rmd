@@ -2,7 +2,9 @@
 title: "Script (Data Compilation + Analysis)"
 author: "Erik Curtis"
 date: "2024-05-30"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 # 1. Prepare Data
@@ -1112,7 +1114,9 @@ Prop_plot <- ggplot(Mesos.prop %>% subset(prop!=1 & prop!=0), aes(Time.hr, prop,
   facet_grid(Target~Treatment, labeller=as_labeller(headernames))+
   theme(strip.text.x = element_text(size=11),
         strip.text.y = element_text(size=11),
-        panel.spacing = unit(0.7, "lines"))
+        panel.spacing = unit(0.7, "lines"))+
+  labs(fill = "Legend")+
+  labs(color = "Legend")
 Prop_plot <- facetColor(Prop_plot, c(p7.5,"#B7ECFF","#E8CDE9"))
   
 ggsave(paste0(plots.dir,"/FigS0.png"), Prop_plot, width = 14, height =7.5, units = c("in"))
