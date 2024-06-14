@@ -255,6 +255,7 @@ library(car)
 library(gridExtra)
 library(magrittr)
 library(gridExtra)
+library(betareg)
 rm(list=objects())
 
 this.dir = dirname(rstudioapi::getActiveDocumentContext()$path)
@@ -528,8 +529,6 @@ MixedResids
 #Roughly normal distribution of residuals, although low outliers exist
 shapiro.test(resid(mixed.mod)) # Shapiro test confirms this
 
-ggsave(filename=paste0(plots.dir,"/MixedModelEval.png"), MixedResids, width = 8, height =6, units = c("in"))
-
 #Model Summary
 summary(mixed.mod)
 
@@ -537,79 +536,11 @@ summary(mixed.mod)
 fixed_effects <- fixef(mixed.mod)
 random_effects <- ranef(mixed.mod)$Meso.Num
 
-# Look at model fit for each mesocosm
+# Append model fit to dataframe
 fit <- Mesos
 fit$resids <- resid(mixed.mod)
 fit <- fit %>% mutate(Conditional_Prediction = LNGc.meso - resids)
 fit$Marginal_Prediction = predict(mixed.mod, re.form=NA)
-
-# Plot
-headernames <- c(
-  `CARP` = "Carp",
-  `STHD` = "Steelhead",
-  `ETO` = str_wrap("No Leaves",15),
-  `DOC` = str_wrap("Dissolved Organic Carbon",15),
-  `NCH` = str_wrap("High Leaves",15),
-  `NCL` = str_wrap("Low Leaves",15),
-  `BFH` = str_wrap("High Leaves + Biofilm",15),
-  `BFL` = str_wrap("Low Leaves + Biofilm",15),
-  `1` = "Mesocosm 1",
-  `2` = "Mesocosm 2",
-  `3` = "Mesocosm 3",
-  `4` = "Mesocosm 4"
-)
-
-Fit.plot.Carp <- ggplot(fit %>% subset(Target == "CARP"), aes(x=Time.hr, y=LNGc.meso, fill=interaction(Treatment,Size)))+
-  geom_point(size=5, shape=21, stroke=0.75)+
-  geom_line(aes(x = Time.hr, y = Conditional_Prediction, color=Size, linetype="dashed"))+
-  theme_bw()+theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
-  scale_fill_manual(values=p9.5)+
-  scale_color_manual(values=c("black","black"))+
-  scale_linetype_manual(values=c("solid","dashed"))+
-  ylab(expression(ln(eDNA~Gene~Copies~mesocosm^"-1")))+
-  xlab(expression(Time~(hours)))+
-  theme(axis.text.y=element_text(size=14,color="black"))+
-  theme(axis.text.x=element_text(size=14,color="black"))+
-  theme(axis.title.x=element_text(size=16,color="black"))+
-  theme(axis.title.y=element_text(size=16,color="black"))+
-  theme(legend.position="none")+
-  scale_y_continuous(expand=c(0,0),limits=c(6,16), position = "right")+
-  ###These lines facet the graph
-  facet_grid(Treatment~Row, switch="y", labeller = as_labeller(headernames))+
-  theme(strip.text.x = element_text(size=16),
-        strip.text.y = element_text(size=16))+
-  theme(strip.background =element_rect(fill="white"))+
-  theme(panel.spacing = unit(1, "lines"))
-#Add colors to facet grid
-g <- facetColor(Fit.plot.Carp,c("#B7ECFF","#B7ECFF","#B7ECFF","#B7ECFF",p7))
-ggsave(filename=paste0(plots.dir,"/ModelFit_Carp.png"), g, width = 14, height = 12, units = c("in"))
-
-Fit.plot.Sthd <- ggplot(fit %>% subset(Target == "STHD"), aes(x=Time.hr, y=LNGc.meso, fill=interaction(Treatment,Size)))+
-  geom_point(size=5, shape=21, stroke=0.75)+
-  geom_line(aes(x = Time.hr, y = Conditional_Prediction, color=Size, linetype="dashed"))+
-  theme_bw()+theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
-  scale_fill_manual(values=p9.5)+
-  scale_color_manual(values=c("black","black"))+
-  scale_linetype_manual(values=c("solid","dashed"))+
-  ylab(expression(ln(eDNA~Gene~Copies~mesocosm^"-1")))+
-  xlab(expression(Time~(hours)))+
-  theme(axis.text.y=element_text(size=14,color="black"))+
-  theme(axis.text.x=element_text(size=14,color="black"))+
-  theme(axis.title.x=element_text(size=16,color="black"))+
-  theme(axis.title.y=element_text(size=16,color="black"))+
-  theme(legend.position="none")+
-  scale_y_continuous(expand=c(0,0),limits=c(6,16), position = "right")+
-  ###These lines facet the graph
-  facet_grid(Treatment~Row, switch="y", labeller = as_labeller(headernames))+
-  theme(strip.text.x = element_text(size=16),
-        strip.text.y = element_text(size=16))+
-  theme(strip.background =element_rect(fill="white"))+
-  theme(panel.spacing = unit(1, "lines"))
-#Add colors to facet grid
-g <- facetColor(Fit.plot.Sthd, c("#E8CDE9","#E8CDE9","#E8CDE9","#E8CDE9",p7))
-ggsave(filename=paste0(plots.dir,"/ModelFit_Sthd.png"), g, width = 14, height = 12, units = c("in"))
-
-#Fits looks good
 
 #Generate the data for Table 3
 tab3 <- tidy(anova(mixed.mod)) %>% suppressMessages()
@@ -681,6 +612,29 @@ Final.Slopes
 pairs(Final, by=c("Size","Target"))
 
 write.csv(Final.Slopes, file=paste0(files.dir,"/MesosRemovalMODEL.csv"), row.names=F)
+
+#PSD Change Stats
+
+#Here we use a GLM w/ beta distribution to determine if the proportion of eDNA size fractions changes over time within our mesocosms. 
+
+#Start with Carp
+Carp.prop <- Mesos.prop %>% 
+  subset(Size == "1.2" & Target == "CARP" & prop!=0 & prop!=1)
+  
+beta_Carp = betareg(prop ~ Treatment:Time.hr, data = Carp.prop)
+lrtest(beta_Carp)
+summary(beta_Carp)
+#Prop. of 1.2 um eDNA is decreasing for most Carp treatments
+
+#Now do Steelhead
+Sthd.prop <- Mesos.prop %>% 
+  subset(Size == "1.2" & Target == "STHD" & prop!=0 & prop!=1)
+
+beta_Sthd = betareg(prop ~ Treatment:Time.hr, data = Sthd.prop)
+lrtest(beta_Sthd)
+summary(beta_Sthd)
+#Prop. of 1.2 um eDNA is increasing for most Sthd treatments
+
 ```
 
 Now, we perform our analyses for the ancillary data.
@@ -740,7 +694,7 @@ correlation
 
 # 3. Figures
 
-Now, we plot the figures presented in the manuscript, including the supplementary figures.
+Now, we plot the figures presented in the manuscript, excluding Figure 1, which does not present graphical data and was created in power-point.
 
 ```{r Step 4, echo=F, warning=F}
 # Fig 1 : No graphical elements, constructed in powerpoint
@@ -1122,3 +1076,197 @@ knitr::include_graphics(paste0(plots.dir,"/Fig5.png"))
 ```
 
 # 4. Supplementary Materials
+
+Here we reproduce the materials provided in "Supplementary_Figures&Tables.pdf"
+
+```{r Supplementary}
+
+#Figure S0
+headernames <- c(
+  `CARP` = "Carp",
+  `STHD` = "Steelhead",
+  `ETO` = str_wrap("No Leaves",15),
+  `DOC` = str_wrap("Dissolved Organic Carbon",15),
+  `NCH` = str_wrap("High Leaves",15),
+  `NCL` = str_wrap("Low Leaves",15),
+  `BFH` = str_wrap("High Leaves + Biofilm",15),
+  `BFL` = str_wrap("Low Leaves + Biofilm",15)
+)
+
+Prop_plot <- ggplot(Mesos.prop %>% subset(prop!=1 & prop!=0), aes(Time.hr, prop, fill=interaction(Size, Target, sep = ":" ))) +
+  geom_smooth(aes(group=Size, color=interaction(Size, Target, sep = ":" )), 
+                method='lm', linetype="solid", size=1)+
+  geom_point(size=3, shape=21, color="black", stroke=0.25)+
+  scale_fill_manual(values=c("#009AD0","#B7ECFF","#BD62CC","#E8CDE9"), 
+                    labels=c('0.4 μm', '1.2 μm', '0.4 μm', '1.2 μm'))+
+  scale_color_manual(values=c("#009AD0","#B7ECFF","#BD62CC","#E8CDE9"), 
+                    labels=c('0.4 μm', '1.2 μm', '0.4 μm', '1.2 μm'))+
+  theme_bw()+theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+  ylab(expression(Proportion~of~eDNA~Gene~Copies~Mesocosm^"-1"))+
+  xlab(expression(Time~(hr)))+
+  theme(axis.text.y=element_text(size=11,color="black"))+
+  theme(axis.text.x=element_text(size=11,color="black"))+
+  theme(axis.title.x=element_text(size=11,color="black"))+
+  theme(axis.title.y=element_text(size=11,color="black"))+
+  theme(legend.position="right")+
+  facet_grid(Target~Treatment, labeller=as_labeller(headernames))+
+  theme(strip.text.x = element_text(size=11),
+        strip.text.y = element_text(size=11),
+        panel.spacing = unit(0.7, "lines"))
+Prop_plot <- facetColor(Prop_plot, c(p7.5,"#B7ECFF","#E8CDE9"))
+  
+ggsave(paste0(plots.dir,"/FigS0.png"), Prop_plot, width = 14, height =7.5, units = c("in"))
+
+knitr::include_graphics(paste0(plots.dir,"/FigS0.png"))
+
+#Figure S1
+#Coerce
+Rel$Bucket <- as.factor(Rel$Bucket)
+Rel$Size <- as.factor(Rel$Size)
+Rel$Target <- as.factor(Rel$Target)
+
+#Average
+Rel <- Rel %>% group_by(Bucket, Target, Size) %>% 
+  dplyr::summarise(GC.mL = mean(GC.mL))
+
+#Plot
+headernames <- c(
+  `CARP` = "Carp",
+  `STHD` = "Steelhead",
+  `BKT1` = "Row 1",
+  `BKT2` = "Row 2",
+  `BKT3` = "Row 3",
+  `BKT4` = "Row 4"
+)
+
+BKTA <- ggplot(Rel, aes(x=Bucket, y=GC.mL, fill=interaction(Size, Target, ":"))) + 
+  geom_bar(stat = "identity", position = "stack", color="black")+
+  scale_fill_manual(values=c("#009AD0","#B7ECFF","#BD62CC","#E8CDE9"), labels =c('0.4 μm', '1.2 μm', '0.4 μm', '1.2 μm'))+
+  theme_bw()+theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+  ylab(expression(Gene~Copies~mL^"-1"))+
+  scale_y_continuous(position = "left")+
+  xlab(expression(Bucket))+
+  theme(axis.text.y=element_text(size=10,color="black"))+
+  theme(axis.text.x=element_text(size=10,color="black"))+
+  theme(axis.title.x=element_text(size=14,color="black"))+
+  theme(axis.title.y=element_text(size=14,color="black"))+
+  theme(strip.background =element_rect(fill="white"))+
+  theme(strip.text.x = element_text(size=14),
+        strip.text.y = element_text(size=14))+
+  theme(legend.position="none")+
+  facet_wrap(~Target, labeller = as_labeller(headernames))+
+  scale_x_discrete(labels = headernames)
+BKTA <- facetColor(BKTA, c("#B7ECFF","#E8CDE9"))
+
+#Now calculate proportions
+Rel.Prop <- Rel %>% 
+  group_by(Bucket, Target) %>% 
+  dplyr::summarise(n = sum(GC.mL)) 
+Rel.Prop <- inner_join(Rel, Rel.Prop, by=c("Bucket", "Target"))
+Rel.Prop <- Rel.Prop %>% mutate(prop = GC.mL / n)
+
+#plot
+BKTB <- ggplot(Rel.Prop, aes(x=Bucket, y=prop, fill=interaction(Size, Target, ":"))) + 
+  geom_bar(stat = "identity", position = "stack", color="black")+
+  scale_fill_manual(values=c("#009AD0","#B7ECFF","#BD62CC","#E8CDE9"), labels =c('0.4 μm', '1.2 μm', '0.4 μm', '1.2 μm'))+
+  theme_bw()+theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+  ylab(expression(Proportion~of~Gene~Copies~mL^"-1"))+
+  scale_y_continuous(position = "left")+
+  xlab(expression(Bucket))+
+  theme(axis.text.y=element_text(size=10,color="black"))+
+  theme(axis.text.x=element_text(size=10,color="black"))+
+  theme(axis.title.x=element_text(size=14,color="black"))+
+  theme(axis.title.y=element_text(size=14,color="black"))+
+  theme(strip.background =element_rect(fill="white"))+
+  theme(strip.text.x = element_text(size=14),
+        strip.text.y = element_text(size=14))+
+  facet_wrap(~Target, labeller = as_labeller(headernames))+
+  labs(fill = "Legend")+
+  scale_x_discrete(labels = headernames)
+BKTB <- facetColor(BKTB, c("#B7ECFF","#E8CDE9"))
+
+BKTplot <- wrap_elements(BKTA) + wrap_elements(BKTB)
+
+ggsave(paste0(plots.dir,"/FigS1.png"), BKTplot, width = 12, height = 8, units = c("in"))
+
+knitr::include_graphics(paste0(plots.dir,"/FigS1.png"))
+
+
+# Figure S2
+resid_panel(mixed.mod, plots="all")
+ggsave(paste0(plots.dir,"/FigS2.png"), resid_panel(mixed.mod, plots="all"), width = 8, height =6, units = c("in"))
+
+# Figure S3 + S4
+
+# Plot
+headernames <- c(
+  `CARP` = "Carp",
+  `STHD` = "Steelhead",
+  `ETO` = str_wrap("No Leaves",15),
+  `DOC` = str_wrap("Dissolved Organic Carbon",15),
+  `NCH` = str_wrap("High Leaves",15),
+  `NCL` = str_wrap("Low Leaves",15),
+  `BFH` = str_wrap("High Leaves + Biofilm",15),
+  `BFL` = str_wrap("Low Leaves + Biofilm",15),
+  `1` = "Mesocosm 1",
+  `2` = "Mesocosm 2",
+  `3` = "Mesocosm 3",
+  `4` = "Mesocosm 4"
+)
+
+Fit.plot.Carp <- ggplot(fit %>% subset(Target == "CARP"), aes(x=Time.hr, y=LNGc.meso, fill=interaction(Treatment,Size)))+
+  geom_point(size=5, shape=21, stroke=0.75)+
+  geom_line(aes(x = Time.hr, y = Conditional_Prediction, color=Size, linetype="dashed"))+
+  theme_bw()+theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+  scale_fill_manual(values=p9.5)+
+  scale_color_manual(values=c("black","black"))+
+  scale_linetype_manual(values=c("solid","dashed"))+
+  ylab(expression(ln(eDNA~Gene~Copies~mesocosm^"-1")))+
+  xlab(expression(Time~(hours)))+
+  theme(axis.text.y=element_text(size=14,color="black"))+
+  theme(axis.text.x=element_text(size=14,color="black"))+
+  theme(axis.title.x=element_text(size=16,color="black"))+
+  theme(axis.title.y=element_text(size=16,color="black"))+
+  theme(legend.position="none")+
+  scale_y_continuous(expand=c(0,0),limits=c(6,16), position = "right")+
+  ###These lines facet the graph
+  facet_grid(Treatment~Row, switch="y", labeller = as_labeller(headernames))+
+  theme(strip.text.x = element_text(size=16),
+        strip.text.y = element_text(size=16))+
+  theme(strip.background =element_rect(fill="white"))+
+  theme(panel.spacing = unit(1, "lines"))
+#Add colors to facet grid
+g <- facetColor(Fit.plot.Carp,c("#B7ECFF","#B7ECFF","#B7ECFF","#B7ECFF",p7))
+ggsave(filename=paste0(plots.dir,"/FigS3.png"), g, width = 14, height = 12, units = c("in"))
+
+knitr::include_graphics(paste0(plots.dir,"/FigS3.png"))
+
+
+Fit.plot.Sthd <- ggplot(fit %>% subset(Target == "STHD"), aes(x=Time.hr, y=LNGc.meso, fill=interaction(Treatment,Size)))+
+  geom_point(size=5, shape=21, stroke=0.75)+
+  geom_line(aes(x = Time.hr, y = Conditional_Prediction, color=Size, linetype="dashed"))+
+  theme_bw()+theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+  scale_fill_manual(values=p9.5)+
+  scale_color_manual(values=c("black","black"))+
+  scale_linetype_manual(values=c("solid","dashed"))+
+  ylab(expression(ln(eDNA~Gene~Copies~mesocosm^"-1")))+
+  xlab(expression(Time~(hours)))+
+  theme(axis.text.y=element_text(size=14,color="black"))+
+  theme(axis.text.x=element_text(size=14,color="black"))+
+  theme(axis.title.x=element_text(size=16,color="black"))+
+  theme(axis.title.y=element_text(size=16,color="black"))+
+  theme(legend.position="none")+
+  scale_y_continuous(expand=c(0,0),limits=c(6,16), position = "right")+
+  ###These lines facet the graph
+  facet_grid(Treatment~Row, switch="y", labeller = as_labeller(headernames))+
+  theme(strip.text.x = element_text(size=16),
+        strip.text.y = element_text(size=16))+
+  theme(strip.background =element_rect(fill="white"))+
+  theme(panel.spacing = unit(1, "lines"))
+#Add colors to facet grid
+g <- facetColor(Fit.plot.Sthd, c("#E8CDE9","#E8CDE9","#E8CDE9","#E8CDE9",p7))
+ggsave(filename=paste0(plots.dir,"/FigS4.png"), g, width = 14, height = 12, units = c("in"))
+
+knitr::include_graphics(paste0(plots.dir,"/FigS4.png"))
+
+```
