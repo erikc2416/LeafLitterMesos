@@ -3,7 +3,8 @@ title: "Script (Data Compilation + Analysis)"
 author: "Erik Curtis"
 date: "2024-05-30"
 output:
-  pdf_document: default
+  pdf_document: 
+    latex_engine: xelatex
   html_document: default
 ---
 
@@ -20,6 +21,7 @@ In addition, this script incorporates additional relevant data from the experime
 
 ```{r Directory + Packages, echo=T, message=F}
 knitr::opts_chunk$set(echo = TRUE)
+options(tinytex.verbose = TRUE)
 rm(list=objects())
 this.dir = dirname(rstudioapi::getActiveDocumentContext()$path)
 data.dir = paste0(this.dir,"/Data")
