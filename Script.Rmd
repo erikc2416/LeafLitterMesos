@@ -21,7 +21,6 @@ In addition, this script incorporates additional relevant data from the experime
 
 ```{r Directory + Packages, echo=T, message=F}
 knitr::opts_chunk$set(echo = TRUE)
-options(tinytex.verbose = TRUE)
 rm(list=objects())
 this.dir = dirname(rstudioapi::getActiveDocumentContext()$path)
 data.dir = paste0(this.dir,"/Data")
@@ -1016,67 +1015,12 @@ PanelD <- ggplot(Final.Slopes, aes(x=Treatment, y=Time.days.trend, fill=interact
 
 ## Combined Panels
 
-RemovalStack <- (wrap_elements(PanelA, clip=F) + wrap_elements(PanelB %>% facetColor(c("#999696","azure3")), clip=F)) / (wrap_elements(PanelC %>% facetColor(c("#B7ECFF","#E8CDE9"))) + wrap_elements(PanelD %>% facetColor(c("#999696","azure3","#B7ECFF","#E8CDE9"))))
+RemovalStack <- (wrap_elements(PanelA, clip=F) + wrap_elements(PanelB %>% facetColor(c("#999696","azure3")), clip=F)) / wrap_elements(PanelD %>% facetColor(c("#999696","azure3","#B7ECFF","#E8CDE9")))
 
 ggsave(filename=paste0(plots.dir,"/Fig4.png"), RemovalStack, width = 15, height = 18, units = c("in"))
 
 knitr::include_graphics(paste0(plots.dir,"/Fig4.png"))
 
-# Fig. 5 : Metabolism
-
-Water.ER <- Mesos.tiny %>% ggplot(aes(x=Treatment, y=-Water.ER.mg.hr.L, fill=Treatment)) + 
-  geom_boxplot(color="black", stroke=0.75) +
-  scale_fill_manual(values = p5, guide="none") + 
-  theme_bw()+theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
-  ylab(expression(Water~Column~Respiration~(mg~O2~L^-1~hr^-1)))+
-  xlab(expression(Treatment))+
-  scale_y_continuous(limits = c(0,0.5))+
-  scale_x_discrete(labels = (boxlabels))+
-  geom_signif(comparisons = list(c("ETO","ETO"),c("DOC","DOC"),c("NCL","BFH")),
-              map_signif_level = FALSE, 
-              textsize = 4, 
-              annotations = c("a","b","a"),
-              y_position = c(0.08,0.46,0.2),
-              tip_length = 0.04
-  )
-
-Leaf.ER <- Mesos.tiny %>% ggplot(aes(x=Treatment, y=-Leaf.ER.mg.hr.m2, fill=Treatment)) + 
-  geom_boxplot(color="black") +
-  scale_fill_manual(values = p5, guide="none") + 
-  theme_bw()+theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
-  ylab(expression(Leaf~Litter~Respiration~(mg~O2~m^-2~hr^-1)))+
-  xlab(expression(Treatment))+
-  scale_y_continuous(limits = c(0,21))+
-  scale_x_discrete(labels = (boxlabels))+
-  geom_signif(comparisons = list(c("NCL","BFH")),
-              map_signif_level = FALSE, 
-              textsize = 4, 
-              annotations = c("NS"),
-              y_position = c(18.5),
-              tip_length = 0.04
-  )
-
-Mesos.ER <- Mesos.tiny %>% ggplot(aes(x=Treatment, y=-Mesocosm.ER.mg.hr, fill=Treatment)) + 
-  geom_boxplot(color="black") +
-  scale_fill_manual(values = p5, guide="none") + 
-  theme_bw()+theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
-  ylab(expression(Mesocosm~Respiration~(mg~O2~hr^-1)))+
-  xlab(expression(Treatment))+
-  scale_y_continuous(limits = c(0,12))+
-  scale_x_discrete(labels = (boxlabels))+
-  geom_signif(comparisons = list(c("ETO","ETO"),c("DOC","DOC"),c("NCL","NCL"),c("NCH","NCH"),c("BFL","BFL"),c("BFH","BFH")),
-              map_signif_level = FALSE,
-              textsize = 4,
-              annotations = c("a","c","abc","bc","ab","abc"),
-              y_position = c(1.5,11,4.2,8.2,3.4,4.5),
-              tip_length = 0.02
-  )
-
-ER.Full <- Water.ER + Leaf.ER + Mesos.ER
-
-ggsave(paste0(plots.dir,"/Fig5.png"), ER.Full, width=10, height = 5.5, units=c("in"))
-
-knitr::include_graphics(paste0(plots.dir,"/Fig5.png"))
 ```
 
 # 4. Supplementary Materials
@@ -1274,5 +1218,61 @@ g <- facetColor(Fit.plot.Sthd, c("#E8CDE9","#E8CDE9","#E8CDE9","#E8CDE9",p7))
 ggsave(filename=paste0(plots.dir,"/FigS4.png"), g, width = 14, height = 12, units = c("in"))
 
 knitr::include_graphics(paste0(plots.dir,"/FigS4.png"))
+
+# Fig. S5 : Metabolism
+
+Water.ER <- Mesos.tiny %>% ggplot(aes(x=Treatment, y=-Water.ER.mg.hr.L, fill=Treatment)) + 
+  geom_boxplot(color="black", stroke=0.75) +
+  scale_fill_manual(values = p5, guide="none") + 
+  theme_bw()+theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+  ylab(expression(Water~Column~Respiration~(mg~O2~L^-1~hr^-1)))+
+  xlab(expression(Treatment))+
+  scale_y_continuous(limits = c(0,0.5))+
+  scale_x_discrete(labels = (boxlabels))+
+  geom_signif(comparisons = list(c("ETO","ETO"),c("DOC","DOC"),c("NCL","BFH")),
+              map_signif_level = FALSE, 
+              textsize = 4, 
+              annotations = c("a","b","a"),
+              y_position = c(0.08,0.46,0.2),
+              tip_length = 0.04
+  )
+
+Leaf.ER <- Mesos.tiny %>% ggplot(aes(x=Treatment, y=-Leaf.ER.mg.hr.m2, fill=Treatment)) + 
+  geom_boxplot(color="black") +
+  scale_fill_manual(values = p5[3:10], guide="none") + 
+  theme_bw()+theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+  ylab(expression(Leaf~Litter~Respiration~(mg~O2~m^-2~hr^-1)))+
+  xlab(expression(Treatment))+
+  scale_y_continuous(limits = c(0,21))+
+  scale_x_discrete(labels = (boxlabels))+
+  geom_signif(comparisons = list(c("NCL","BFH")),
+              map_signif_level = FALSE, 
+              textsize = 4, 
+              annotations = c("NS"),
+              y_position = c(18.5),
+              tip_length = 0.04
+  )
+
+Mesos.ER <- Mesos.tiny %>% ggplot(aes(x=Treatment, y=-Mesocosm.ER.mg.hr, fill=Treatment)) + 
+  geom_boxplot(color="black") +
+  scale_fill_manual(values = p5, guide="none") + 
+  theme_bw()+theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+  ylab(expression(Mesocosm~Respiration~(mg~O2~hr^-1)))+
+  xlab(expression(Treatment))+
+  scale_y_continuous(limits = c(0,12))+
+  scale_x_discrete(labels = (boxlabels))+
+  geom_signif(comparisons = list(c("ETO","ETO"),c("DOC","DOC"),c("NCL","NCL"),c("NCH","NCH"),c("BFL","BFL"),c("BFH","BFH")),
+              map_signif_level = FALSE,
+              textsize = 4,
+              annotations = c("a","c","abc","bc","ab","abc"),
+              y_position = c(1.5,11,4.2,8.2,3.4,4.5),
+              tip_length = 0.02
+  )
+
+ER.Full <- Water.ER + Leaf.ER + Mesos.ER
+
+ggsave(paste0(plots.dir,"/FigS5.png"), ER.Full, width=10, height = 5.5, units=c("in"))
+
+knitr::include_graphics(paste0(plots.dir,"/FigS5.png"))
 
 ```
