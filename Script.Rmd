@@ -699,7 +699,7 @@ correlation
 
 Now, we plot the figures presented in the manuscript, excluding Figure 1, which does not present graphical data and was created in power-point.
 
-```{r Step 4, echo=F, warning=F}
+```{r Step 4, echo=T, warning=F}
 # Fig 1 : No graphical elements, constructed in powerpoint
 
 #Fig 2 : Average PSD w/ Proportion inset
