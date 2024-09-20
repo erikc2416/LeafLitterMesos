@@ -54,6 +54,10 @@ assist in interpreting eDNA data in natural systems.
 KEYWORDS: Environmental DNA, aquatic biofilms, aquatic biomonitoring,
 ddPCR, particle size distribution.
 
+GRAPHICAL ABSTRACT:
+
+<img src="media/image1.tiff" style="width:6.28333in;height:3.38333in" />
+
 TEXT:
 
 1.  **Introduction**
@@ -224,7 +228,7 @@ both the colonization and preparatory period, we set mesocosms to
 recirculate at an average water velocity of 0.15 m s<sup>-1</sup> which
 remained constant for the duration of the experiment.
 
-<img src="media/image1.png" style="width:6.5in;height:3.75707in" />
+<img src="media/image2.png" style="width:6.5in;height:3.75707in" />
 
 **Figure 1.** (A) Images of recirculating mesocosm treatments
 immediately before the addition of eDNA. (B) Diagram depicting
@@ -327,7 +331,7 @@ extracted eDNA removal rates according to our three factors from the
 fitted model using the “emtrends” function (“emmmeans” package) applied
 across time, and performed pairwise comparisons of these estimates using
 a Tukey HSD post-hoc test. We used Beta family linear models using the R
-package “betareg”(Cribari-Neto and Zeileis, 2010) using the formula
+package “betareg” (Cribari-Neto and Zeileis, 2010) using the formula
 *proportion* ~ *Time:Treatment* to observe if the proportion of 1.2-μm
 eDNA was increasing or decreasing, generating separate models for Carp
 and Steelhead. We used ANOVAs and post-hoc comparisons with Tukey HSD
@@ -370,7 +374,7 @@ over time for all but the DOC treatment (beta linear regression, p &lt;
 over time for all but the Low Leaves treatment (beta linear regression,
 p &lt; 0.03).
 
-<img src="media/image2.png" style="width:6.58453in;height:3.54231in" />
+<img src="media/image3.png" style="width:6.58453in;height:3.54231in" />
 
 **Figure 2.** Stacked area plot representing average Carp (Top row) and
 Steelhead (Bottom row) eDNA quantities for the six treatments. Inset
@@ -390,7 +394,7 @@ interaction between the three experimental factors in our experiment
 in removal in the experiment were dictated by combinations of these
 three factors (**Fig. 3, Table S3, see Supporting Information**).
 
-<img src="media/image3.png" style="width:6.00073in;height:4.10883in" />
+<img src="media/image4.png" style="width:6.00073in;height:4.10883in" />
 
 **Figure 3.** Removal of Carp (left) and Steelhead (right) eDNA within
 each mesocosm for both 1.2-μm (lighter) and 0.4-μm (darker) particle
@@ -439,7 +443,7 @@ Information**). This effect is visible when examining estimates of eDNA
 removal for each combination of treatment, particle size, and target
 organism (**Fig. 4C**).
 
-<img src="media/image4.png" style="width:6.06389in;height:7.25833in" />
+<img src="media/image5.png" style="width:6.06389in;height:7.25833in" />
 
 **Figure 4.** Removal rate (k) estimates + standard error from the
 mixed-effects model based on (A) Treatment alone, (B) Treatment and
@@ -680,16 +684,24 @@ Toronto, Ontario M5S 1A1, Canada
 †† University of Washington, School of Marine and Environmental Affairs,
 Seattle, Washington, USA
 
-Author Contributions
+CRediT authorship Contribution Statement
 
-J.L.T., D.B., A.J.S., G.A.L., K.B., and S.P.E. conceptualized the work;
-J.L.T., E.D.S., D.B., P.F.P.B.-D., and S.P.E. designed the experiment;
-E.M.C, P.F.P.B.-D. and E.D.S. performed the experiment; E.M.C. processed
-eDNA samples; E.M.C., E.D.S., P.F.P.B.-D., J.L.T analyzed experimental
-data; all authors discussed findings; E.M.C. wrote first manuscript
-draft; and all authors contributed to manuscript editing.
+**Erik Curtis**: Formal Analysis, Investigation, Data Curation, Writing
+– Original Draft, Visualization, **Jennifer L. Tank**:
+Conceptualization, Writing – Review and Editing, Funding Acquisition,
+Supervision, **Elise D. Snyder**: Conceptualization, Investigation,
+Writing – Review and Editing, Visualization, **Pedro F.P.
+Brandão-Dias:** Conceptualization, Investigation, Formal Analysis,
+Writing – Review and Editing, **Kyle Bibby**: Conceptualization, Writing
+– Review and Editing, Funding Acquisition, Supervision, **Arial J.
+Shogren:** Conceptualization, Writing – Review and Editing, Funding
+Acquisition, Supervision, **Diogo Bolster**: Conceptualization, Writing
+– Review and Editing, Funding Acquisition, Supervision, **Scott P.
+Egan:** Conceptualization, Writing – Review and Editing, Funding
+Acquisition, Supervision, **Gary A. Lamberti:** Conceptualization,
+Writing – Review and Editing, Funding Acquisition, Supervision.
 
-Notes
+NOTES
 
 The authors declare no competing financial interest.
 
@@ -705,7 +717,7 @@ facilities for target eDNA. This study was supported through funding
 from the U.S. Department of Defense (DoD) Strategic Environmental
 Research and Development Program (SERDP, Project RC19-1276), and support
 to E.M.C. from the Glynn Family Honors Program at the University of
-Notre Dame as part of his undergraduate thesis.
+Notre Dame.
 
 REFERENCES
 
@@ -962,7 +974,3 @@ Zhao, B., Van Bodegom, P.M., Trimbos, K.B., 2023. Bacterial abundance
 and pH associate with eDNA degradation in water from various aquatic
 ecosystems in a laboratory setting. Front. Environ. Sci. 11, 1025105.
 https://doi.org/10.3389/fenvs.2023.1025105
-
-For Table of Contents Only
-
-<img src="media/image5.tiff" style="width:3.25in;height:1.75in" />
