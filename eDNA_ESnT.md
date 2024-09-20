@@ -25,8 +25,10 @@ Notre Dame, IN 46556 USA, KB: <kbibby@nd.edu>, DB: <dbolster@nd.edu> 
 Alabama, Science and Engineering Complex,1325 Hackberry Ln, Tuscaloosa,
 AL 35401, USA, AJS: <ashogren@ua.edu> 
 
-KEYWORDS: Environmental DNA, aquatic biofilms, aquatic biomonitoring,
-ddPCR, particle size distribution.
+Present Addresses
+
+† Department of Ecology and Evolutionary Biology, University of Toronto,
+Toronto, Ontario M5S 1A1, Canada
 
 ABSTRACT: Understanding what controls eDNA removal from the water column
 remains a critical challenge for interpreting eDNA results in flowing
@@ -61,64 +63,68 @@ TEXT:
 Environmental DNA (eDNA) is conceptualized as the sum of all
 DNA-containing particles within an environment, and its importance for
 biodiversity monitoring is increasingly recognized in the field of
-limnology.<sup>1</sup> Declining biodiversity is a growing crisis that
-affects numerous habitats globally, and the field of conservation is
-heavily reliant on population data derived from species
-monitoring.<sup>2,3</sup> In many cases, however, these data are
-difficult to acquire, especially at large spatial scales or in
-challenging habitats. Moreover, efforts may require invasive sampling
-and organism death<sup>4</sup> or have a high rate of species
-misidentification.<sup>5</sup> In such situations, eDNA sampling
-represents an efficient and non-invasive method of monitoring the
-biodiversity of organisms in aquatic habitats that has the added benefit
-of increased sensitivity when dealing with species at low population
-densities.<sup>6</sup>
+limnology (Rees et al., 2014). Declining biodiversity is a growing
+crisis that affects numerous habitats globally, and the field of
+conservation is heavily reliant on population data derived from species
+monitoring (Guisan and Thuiller, 2005; Magurran, 2004). In many cases,
+however, these data are difficult to acquire, especially at large
+spatial scales or in challenging habitats. Moreover, efforts may require
+invasive sampling and organism death (Fediajevaite et al., 2021) or have
+a high rate of species misidentification (Austen et al., 2016). In such
+situations, eDNA sampling represents an efficient and non-invasive
+method of monitoring the biodiversity of organisms in aquatic habitats
+that has the added benefit of increased sensitivity when dealing with
+species at low population densities (Jerde et al., 2011).
 
 While significant attention has been placed on the study of eDNA in
-standing water,<sup>7</sup> less research has been conducted regarding
-the behavior of eDNA particles in flowing waters (i.e., rivers and
-streams). While eDNA can be a sensitive indicator of the presence of
-rare, endangered, or invasive species, eDNA technology is often unable
-to identify the exact location of the target organism in flowing
-water.<sup>8</sup> Several studies have shown that eDNA particles are
-not homogenous in nature, but rather differ in size and
-composition<sup>9</sup> and may change over time.<sup>10,11</sup> As a
-result, the removal of eDNA from the water column may vary based on a
-complex combination of abiotic and biotic factors, including
-discharge,<sup>12</sup> pH and temperature,<sup>13</sup> substrate
-composition,<sup>14</sup> and the composition of the aquatic microbial
-community.<sup>7</sup> Many of these controls on eDNA transport and
-removal also vary seasonally, especially in temperate
-streams.<sup>15–17</sup> However, most eDNA research to date has
-primarily focused on how seasonality influences eDNA generation through
-changes in organismal behavior.<sup>18,19</sup> Although some studies
-have quantified eDNA in relation to seasonal changes in flow
-rates,<sup>12,20</sup> few studies have explored how other seasonal
-factors such as autumn litterfall alter eDNA transport and removal.
+standing water (Barnes and Turner, 2016), less research has been
+conducted regarding the behavior of eDNA particles in flowing waters
+(i.e., rivers and streams). While eDNA can be a sensitive indicator of
+the presence of rare, endangered, or invasive species, eDNA technology
+is often unable to identify the exact location of the target organism in
+flowing water (Deiner and Altermatt, 2014). Several studies have shown
+that eDNA particles are not homogenous in nature, but rather differ in
+size and composition (Shogren et al., 2016) and may change over time
+(Brandão‐Dias et al., 2023; Zhao et al., 2021). As a result, the removal
+of eDNA from the water column may vary based on a complex combination of
+abiotic and biotic factors, including discharge (Thalinger et al.,
+2021), pH and temperature (Strickler et al., 2015), substrate
+composition (Shogren et al., 2017), and the composition of the aquatic
+microbial community (Barnes and Turner, 2016). Many of these controls on
+eDNA transport and removal also vary seasonally, especially in temperate
+streams (Dettinger and Diaz, 2000; Hullar et al., 2006; Polato et al.,
+2018). However, most eDNA research to date has primarily focused on how
+seasonality influences eDNA generation through changes in organismal
+behavior.(Buxton et al., 2017; de Souza et al., 2016) Although some
+studies have quantified eDNA in relation to seasonal changes in flow
+rates,(Curtis et al., 2021; Thalinger et al., 2021) few studies have
+explored how other seasonal factors such as autumn litterfall alter eDNA
+transport and removal.
 
 The influence of allochthonous (i.e., external) detrital inputs and
 their subsequent decomposition in forested streams is well documented;
 decomposing leaves represent an important seasonal resource subsidy that
-supports stream ecosystem function through multiple
-pathways.<sup>21</sup> Leaf litter processing includes physical
-breakdown, as well as microbially-mediated breakdown and consumption by
-macroinvertebrates.<sup>22</sup> Seasonal leaf litterfall is an
+supports stream ecosystem function through multiple pathways.(Tank et
+al., 2010) Leaf litter processing includes physical breakdown, as well
+as microbially-mediated breakdown and consumption by
+macroinvertebrates.(Marks, 2019) Seasonal leaf litterfall is an
 important source of coarse and fine particulate organic matter (CPOM and
 FPOM, respectively) in streams both through invertebrate
-shredding<sup>23</sup> and breakdown by fungal decomposers.<sup>24</sup>
-Once in particulate form, leaf-derived POM is exported downstream or
-remains in depositional areas, contributing to the energy base of stream
-food webs.<sup>24</sup> Leaf decomposition also modifies the chemistry
-of streams. Leaves initially release their most labile dissolved organic
-carbon (DOC) as leachate that is quickly assimilated by microbes, and
-this DOC from leaf litter is a major component of dissolved organic
-matter (DOM) standing stock in streams.<sup>25</sup> As a source of
-organic matter, leaves contribute to heterotrophy in streams via
-microbial respiration. Most detrital carbon is respired by
-microorganisms,<sup>26</sup> and prior to decomposition, leaf material
-further influences stream ecosystems by increasing the three-dimensional
-complexity of the stream substrate, providing valuable surface area for
-biofilm colonization and microhabitat for stream organisms.
+shredding(Wallace et al., 1982) and breakdown by fungal
+decomposers.<sup>24</sup> Once in particulate form, leaf-derived POM is
+exported downstream or remains in depositional areas, contributing to
+the energy base of stream food webs.(Webster et al., 1999) Leaf
+decomposition also modifies the chemistry of streams. Leaves initially
+release their most labile dissolved organic carbon (DOC) as leachate
+that is quickly assimilated by microbes, and this DOC from leaf litter
+is a major component of dissolved organic matter (DOM) standing stock in
+streams.(Meyer et al., 1998) As a source of organic matter, leaves
+contribute to heterotrophy in streams via microbial respiration. Most
+detrital carbon is respired by microorganisms,(Marcarelli et al., 2011)
+and prior to decomposition, leaf material further influences stream
+ecosystems by increasing the three-dimensional complexity of the stream
+substrate, providing valuable surface area for biofilm colonization and
+microhabitat for stream organisms.
 
 Although litterfall is a well-studied phenomenon in streams, the
 influence of the autumn pulse of leaves on eDNA transport has not yet
@@ -126,15 +132,15 @@ been explored. The potential for leaves and their decomposition to
 modify eDNA removal in streams is three-fold. First, when deposited in
 high densities, leaf litter increases the three-dimensional complexity
 of the stream substrate, which has been shown previously to alter eDNA
-removal rates in the case of rock substrate.<sup>14</sup> Second,
-microbial biofilms, which have also been linked to increased eDNA
-removal,<sup>27,28</sup> may also increase eDNA removal rates after leaf
-surfaces are colonized. Finally, the leaching of DOM may also stimulate
-eDNA removal through increased microbial activity in the water
-column.<sup>29</sup> This confluence of enhanced physical and biological
-removal pathways of eDNA suggests that autumn litterfall represents an
-important potential driver of eDNA fate and transport in forested
-streams.
+removal rates in the case of rock substrate.(Shogren et al., 2017)
+Second, microbial biofilms, which have also been linked to increased
+eDNA removal,(Shogren et al., 2018; Snyder et al., 2023) may also
+increase eDNA removal rates after leaf surfaces are colonized. Finally,
+the leaching of DOM may also stimulate eDNA removal through increased
+microbial activity in the water column.(Zhao et al., 2023) This
+confluence of enhanced physical and biological removal pathways of eDNA
+suggests that autumn litterfall represents an important potential driver
+of eDNA fate and transport in forested streams.
 
 Using replicated experimental mesocosms, we investigated the physical
 and biological effects of submerged leaf litter, and associated
@@ -148,9 +154,10 @@ rate of eDNA removal, and that removal would be fastest at high leaf
 density and when leaves are colonized with biofilms. We also predicted
 that physical removal would be fastest for larger particles (&gt;1.2
 μm), as in general, larger particles have been shown to fall out of
-suspension more rapidly in streams,<sup>30</sup> and previous eDNA
-studies have observed faster removal of larger particles under varying
-substrate conditions.<sup>11,28</sup>
+suspension more rapidly in streams,(Thomas et al., 2001) and previous
+eDNA studies have observed faster removal of larger particles under
+varying substrate conditions.(Brandão‐Dias et al., 2023; Snyder et al.,
+2023)
 
 1.  **Materials and Methods**
 
@@ -197,8 +204,8 @@ prior to the eDNA releases. We added three netted bags (18 g) into the
 “Low Leaves” treatment, and six netted bags (36 g) into both the “High
 Leaves” and “DOC” treatments. These leaf quantities reflect 50% and 100%
 of the mean leaf density in forested headwater streams,
-respectively.<sup>24</sup> Then, we allowed the leaves to leach the most
-labile DOC into the water for 24 hours.
+respectively.(Webster et al., 1999) Then, we allowed the leaves to leach
+the most labile DOC into the water for 24 hours.
 
 After DOC leaching and biofilm colonization was complete, approximately
 24 hours before beginning the eDNA releases, we prepared the mesocosms
@@ -248,23 +255,25 @@ samples into an ice-filled cooler, along with a 200-mL groundwater blank
 until filtration. We performed a two-step sequential filtration (**Fig.
 1C**) of each sample to independently quantify eDNA particles within
 given particle size classes, based on methods from Brandão-Dias et al.
-(2023a), (**see Supporting Information**).<sup>11</sup>
+(2023a), (**see Supporting Information**).(Brandão‐Dias et al., 2023)
 
 *2.3 eDNA Extraction and Quantification*
 
 We extracted the eDNA from each water sample using the
 phenol:chloroform:isoamyl alcohol extraction method (**see Supporting
-Information**)<sup>11,31</sup> We quantified target eDNA concentration
-in each sample using the BioRad QX200 droplet digital PCR (ddPCR)
-platform (BioRad, Hercules, CA). We opted to use ddPCR due to the
-combination of high sensitivity and smaller sample volumes, as well as
-its proven reliability for eDNA studies.<sup>6</sup> We assayed each
-sample using previously developed primer/probe combinations targeting
-the cytochrome b mitochondrial gene for our two target species (**Table
-S1, see Supporting Information**).<sup>32,33</sup> We determined the
-limit of detection (LOD) using the approach described in Klymus et al.
-(2020),<sup>34</sup> which we determined to be 3.8 gene copies per well
-for the Carp assay and 3.2 gene copies per well for the Steelhead assay.
+Information**)(Brandão‐Dias et al., 2023; Sambrook and Russell, 2006) We
+quantified target eDNA concentration in each sample using the BioRad
+QX200 droplet digital PCR (ddPCR) platform (BioRad, Hercules, CA). We
+opted to use ddPCR due to the combination of high sensitivity and
+smaller sample volumes, as well as its proven reliability for eDNA
+studies.(Jerde et al., 2011) We assayed each sample using previously
+developed primer/probe combinations targeting the cytochrome b
+mitochondrial gene for our two target species (**Table S1, see
+Supporting Information**).(Duda et al., 2021; Takahara et al., 2012) We
+determined the limit of detection (LOD) using the approach described in
+Klymus et al. (2020),(Klymus et al., 2020) which we determined to be 3.8
+gene copies per well for the Carp assay and 3.2 gene copies per well for
+the Steelhead assay.
 
 We also quantified the eDNA particle size distribution for all eDNA
 source water used in the experiment (**Fig. S1, see Supporting
@@ -293,40 +302,41 @@ water velocity at 40 minutes and at 30 hours. To assess the metabolic
 activity within the mesocosms during the experiment, we performed
 metabolism incubations of mesocosm water and leaves in both light and
 dark conditions using standard methods (**see Supporting
-Information**).<sup>35</sup>
+Information**).(Hall and Hotchkiss, 2017)
 
 *2.5 Statistical Analyses*
 
 We assessed the rate of eDNA removal using a hierarchical
 (mixed-effects) linear model. We performed all analyses in R version
-4.3.2<sup>36</sup> using the “lme4” package<sup>37</sup> for model
-fitting and the “emmeans” package<sup>38</sup> for statistical analyses.
-We included a random intercept and slope component for each mesocosm to
-address any differences in the amount of eDNA spiked into each mesocosm,
-as well as the lack of independence between measurements derived from
-sampling the same mesocosm across time (repeated-measures approach). As
-a first-order linear process, we modeled the natural logarithm of the
-quantity of eDNA as scaling linearly in time with the slope given by the
-interaction of the three factors dictated by our experimental design;
-leaf litter quantity and composition (Treatment), eDNA particle size
-class (Size), and target organism (Target). The resulting model notation
-for the “lme4” package is the following:
+4.3.2(R Core Team, 2023) using the “lme4” package(Bates et al., 2015)
+for model fitting and the “emmeans” package(Lenth, 2023) for statistical
+analyses. We included a random intercept and slope component for each
+mesocosm to address any differences in the amount of eDNA spiked into
+each mesocosm, as well as the lack of independence between measurements
+derived from sampling the same mesocosm across time (repeated-measures
+approach). As a first-order linear process, we modeled the natural
+logarithm of the quantity of eDNA as scaling linearly in time with the
+slope given by the interaction of the three factors dictated by our
+experimental design; leaf litter quantity and composition (Treatment),
+eDNA particle size class (Size), and target organism (Target). The
+resulting model notation for the “lme4” package is the following:
 
 ln (\[*G**e**n**e* *C**o**p**i**e**s*\]) ∼ *T**i**m**e*  : *T**r**e**a**t**m**e**n**t* \* *S**i**z**e* \* *T**a**r**g**e**t* + (1 + *T**i**m**e* | *M**e**s**o**c**o**s**m*) 
 
 We assessed model fit by examining the Response vs. Predicted graph and
-Q-Q plot using the package “ggResidPanel.”<sup>39</sup> We extracted
-eDNA removal rates according to our three factors from the fitted model
-using the “emtrends” function (“emmmeans” package) applied across time,
-and performed pairwise comparisons of these estimates using a Tukey HSD
-post-hoc test. We used Beta family linear models using the R package
-“betareg”<sup>40</sup> using the formula *proportion* ~ *Time:Treatment*
-to observe if the proportion of 1.2-μm eDNA was increasing or
-decreasing, generating separate models for Carp and Steelhead. We used
-ANOVAs and post-hoc comparisons with Tukey HSD tests to compare
-environmental conditions between treatment groups and we checked for
-correlations between eDNA removal and environmental conditions using the
-“rcorr” function from R package “Hmisc”.<sup>41</sup>
+Q-Q plot using the package “ggResidPanel.”(Goode and Rey, 2019) We
+extracted eDNA removal rates according to our three factors from the
+fitted model using the “emtrends” function (“emmmeans” package) applied
+across time, and performed pairwise comparisons of these estimates using
+a Tukey HSD post-hoc test. We used Beta family linear models using the R
+package “betareg”(Cribari-Neto and Zeileis, 2010) using the formula
+*proportion* ~ *Time:Treatment* to observe if the proportion of 1.2-μm
+eDNA was increasing or decreasing, generating separate models for Carp
+and Steelhead. We used ANOVAs and post-hoc comparisons with Tukey HSD
+tests to compare environmental conditions between treatment groups and
+we checked for correlations between eDNA removal and environmental
+conditions using the “rcorr” function from R package “Hmisc”.(Harrell
+Jr, 2023)
 
 1.  **Results**
 
@@ -470,38 +480,39 @@ influence eDNA removal rates compared to the control; rather, the
 presence or absence of biofilm, regardless of density, was the overall
 control on the rate of eDNA removal (**Fig. 4**). The lack of a density
 effect was unexpected, given that eDNA particles are known to be trapped
-and retained in substrate.<sup>7,28,42</sup> This result may have
-occurred because the leaves in our study were distributed across the
-bottom of the recirculating mesocosms after we secured them to tiles,
-which prevented the natural accumulation of leaves into leaf packs and
-debris dams. In headwater streams, leaves accumulate into larger packs
-that often modify the flow,<sup>43</sup> and the gradual accumulation of
-leaf litter in autumn has been linked to elevated transient storage and
-slower water velocities.<sup>44</sup> The experimental constraints
-imposed by our mesocosms potentially limited the physical effect of bare
-leaves on removal relative to the potential three-dimensional effect in
-natural systems. Moreover, the pore spaces created by the distributed
-leaves may have been too large and lacked physical complexity compared
-to the small rocks that were shown to increase eDNA removal in previous
-studies.<sup>28,42</sup>
+and retained in substrate.(Barnes and Turner, 2016; Jerde et al., 2016;
+Snyder et al., 2023) This result may have occurred because the leaves in
+our study were distributed across the bottom of the recirculating
+mesocosms after we secured them to tiles, which prevented the natural
+accumulation of leaves into leaf packs and debris dams. In headwater
+streams, leaves accumulate into larger packs that often modify the
+flow,(Tabacchi et al., 2000) and the gradual accumulation of leaf litter
+in autumn has been linked to elevated transient storage and slower water
+velocities.(Argerich et al., 2008) The experimental constraints imposed
+by our mesocosms potentially limited the physical effect of bare leaves
+on removal relative to the potential three-dimensional effect in natural
+systems. Moreover, the pore spaces created by the distributed leaves may
+have been too large and lacked physical complexity compared to the small
+rocks that were shown to increase eDNA removal in previous
+studies.(Jerde et al., 2016; Snyder et al., 2023)
 
 Although we did not observe an effect of uncolonized leaves on the
 removal of eDNA, we did see an increase in eDNA removal with the
 addition of both the low and high density of biofilm-colonized leaves
 (**Fig 4A**). Potential mechanisms driving this increase in removal
 rates include the physical properties of biofilms that trap more eDNA
-particles,<sup>45</sup> along with the biological removal of eDNA by the
-microbial consortium on leaves. Previous studies on eDNA removal have
-found that microbial communities can increase removal through hydrolysis
-via extracellular and membrane-bound nucleases;<sup>13,46</sup> however,
-these observations were limited to planktonic microbes in standing
-water. To our knowledge, no studies have sought to confirm this
-mechanism of removal through examination of metabolic activity and
-enzymatic activity in concert with eDNA degradation. In our study,
-metabolic activity alone, estimated using the microbial respiration
-assay, did not explain variation in eDNA removal rates, and
-biofilm-colonized leaves did not exhibit higher respiration rates
-compared to the other treatments (**Fig. S5, see Supporting
+particles,(Roche et al., 2017) along with the biological removal of eDNA
+by the microbial consortium on leaves. Previous studies on eDNA removal
+have found that microbial communities can increase removal through
+hydrolysis via extracellular and membrane-bound nucleases;(Lance et al.,
+2017; Strickler et al., 2015) however, these observations were limited
+to planktonic microbes in standing water. To our knowledge, no studies
+have sought to confirm this mechanism of removal through examination of
+metabolic activity and enzymatic activity in concert with eDNA
+degradation. In our study, metabolic activity alone, estimated using the
+microbial respiration assay, did not explain variation in eDNA removal
+rates, and biofilm-colonized leaves did not exhibit higher respiration
+rates compared to the other treatments (**Fig. S5, see Supporting
 Information**). In fact, respiration in the water column was highest for
 the DOC treatment (**Fig. S5, see Supporting Information**) which had
 lower eDNA removal relative to control (**Fig. 4A, 4C**). Therefore,
@@ -509,45 +520,48 @@ elevated eDNA removal rates for the two biofilm treatments might be
 better explained by the polysaccharide matrix trapping eDNA particles
 through chemical or physical means. Recent work has indicated that
 natural biofilms can trap and preserve eDNA, acting as passive samplers
-of eDNA in marine environments,<sup>47</sup> and extracellular DNA is a
-well-known component of the biofilm polysaccharide matrix.<sup>48</sup>
-Further, in previous experiments within the same mesocosms, Brandão-Dias
-et al. (Under Review)<sup>49</sup> have found that biofilm
-preferentially uptakes long eDNA molecules, again pointing to its
-potential use as a structural component in biofilm matrix. Future
-studies that seek to investigate the accumulation rates of eDNA within
-the biofilm could draw valuable conclusions about the ecology of eDNA
-under biotic conditions in streams.
+of eDNA in marine environments,(Rivera et al., 2023) and extracellular
+DNA is a well-known component of the biofilm polysaccharide
+matrix.(Whitchurch et al., 2002) Further, in previous experiments within
+the same mesocosms, Brandão-Dias et al. (Under Review)(Brandão-Dias
+P.F.P. et al., n.d.) have found that biofilm preferentially uptakes long
+eDNA molecules, again pointing to its potential use as a structural
+component in biofilm matrix. Future studies that seek to investigate the
+accumulation rates of eDNA within the biofilm could draw valuable
+conclusions about the ecology of eDNA under biotic conditions in
+streams.
 
 The eDNA removal rates documented in our study were comparable to rates
 observed in previous studies. In the control treatment, eDNA removal was
 higher (k=2.74 d<sup>-1</sup>) compared to similar control conditions
-implemented by Snyder et al. 2023 (k=1.1 d<sup>-1</sup>),<sup>28</sup>
-which may be due to the addition of the bare ceramic tiles in our study.
-In contrast, Snyder et al. (2023) showed higher eDNA removal rates for
-biofilm-colonized rock substrate (k=10.2 d<sup>-1</sup>) relative to the
-biofilm-colonized leaves used in this study (High Leaves+Biofilm, k=3.42
-d<sup>-1</sup>; Low Leaves+Biofilm, k=3.75 d<sup>-1</sup>). In addition,
-removal rates for uncolonized substrate and uncolonized leaves were more
-similar (Uncolonized Substrate, k=2.0 d<sup>-1</sup> vs. Low Leaves,
-k=2.47 d<sup>-1</sup>; High Leaves, k=2.41 d<sup>-1</sup>). In general,
-the effect of biofilm-colonization on eDNA removal was more pronounced
-for rock substrate (Snyder et al. 2023) than for the leaf litter we
-studied. This substrate-specific biofilm effect may reflect differences
-in biofilm constituents, and therefore the structure and function of the
-biofilms. While the primary stages of leaf colonization are dominated by
-aquatic hyphomycetes (Fungi Imperfecti),<sup>22,50</sup> biofilm
-assemblages on rocks (the epilithon) tend to be composed of algae and
-bacteria.<sup>51</sup> Leaf biofilms also tend to have higher
-endocellulase activity relative to epilithic assemblages, indicating
-significant differences in enzymatic activity and functional roles
-between the two biofilm communities.<sup>52</sup> Therefore, differences
-in the biofilm structure might modify the passive “stickiness” of the
-polysaccharide matrix, or in case of active removal, different
-biofilm-building organisms may use different amounts of eDNA to build
-their biofilm matrix. Overall, biofilm effects on eDNA may relate to
-differences in the production and dispersal of enzymes that could
-contribute to eDNA degradation, but this process deserves further study.
+implemented by Snyder et al. 2023 (k=1.1 d<sup>-1</sup>),(Snyder et al.,
+2023) which may be due to the addition of the bare ceramic tiles in our
+study. In contrast, Snyder et al. (2023) showed higher eDNA removal
+rates for biofilm-colonized rock substrate (k=10.2 d<sup>-1</sup>)
+relative to the biofilm-colonized leaves used in this study (High
+Leaves+Biofilm, k=3.42 d<sup>-1</sup>; Low Leaves+Biofilm, k=3.75
+d<sup>-1</sup>). In addition, removal rates for uncolonized substrate
+and uncolonized leaves were more similar (Uncolonized Substrate, k=2.0
+d<sup>-1</sup> vs. Low Leaves, k=2.47 d<sup>-1</sup>; High Leaves,
+k=2.41 d<sup>-1</sup>). In general, the effect of biofilm-colonization
+on eDNA removal was more pronounced for rock substrate (Snyder et al.
+2023) than for the leaf litter we studied. This substrate-specific
+biofilm effect may reflect differences in biofilm constituents, and
+therefore the structure and function of the biofilms. While the primary
+stages of leaf colonization are dominated by aquatic hyphomycetes (Fungi
+Imperfecti),(Marks, 2019; Suberkropp and Klug, 1980) biofilm assemblages
+on rocks (the epilithon) tend to be composed of algae and
+bacteria.(Barry J. F. Biggs, 1996) Leaf biofilms also tend to have
+higher endocellulase activity relative to epilithic assemblages,
+indicating significant differences in enzymatic activity and functional
+roles between the two biofilm communities.(Tank and Winterbourn, 1996)
+Therefore, differences in the biofilm structure might modify the passive
+“stickiness” of the polysaccharide matrix, or in case of active removal,
+different biofilm-building organisms may use different amounts of eDNA
+to build their biofilm matrix. Overall, biofilm effects on eDNA may
+relate to differences in the production and dispersal of enzymes that
+could contribute to eDNA degradation, but this process deserves further
+study.
 
 Although we measured an increase in eDNA removal with the addition of
 biofilm-colonized leaves, crucial differences that would occur in
@@ -557,19 +571,19 @@ study only represented the microbial effects of decomposition, as the
 leaves were isolated from the normal macroinvertebrate communities
 present in streams. For example, in headwater streams treated with
 insecticide, both the breakdown rate of leaves and FPOM concentrations
-were significantly reduced.<sup>23</sup> Likewise, excluding shredding
-invertebrates from the decomposition process with fine-netted bags
-resulted in higher species richness of aquatic hyphomycetes on the
+were significantly reduced.(Wallace et al., 1982) Likewise, excluding
+shredding invertebrates from the decomposition process with fine-netted
+bags resulted in higher species richness of aquatic hyphomycetes on the
 surfaces of oak and larch litter relative to litter in coarsely-netted
-bags.<sup>53</sup> The exclusion of macroinvertebrates in our study may
-have impacted eDNA removal by altering the quantity and composition of
-the leaf biofilms and the state of particulate matter in the water
+bags.(Bärlocher, 1980) The exclusion of macroinvertebrates in our study
+may have impacted eDNA removal by altering the quantity and composition
+of the leaf biofilms and the state of particulate matter in the water
 column. Since fine particles suspended in the water column alter eDNA
-removal rates,<sup>54</sup> it is possible that the effect of leaf
-litter on eDNA removal occurs indirectly over longer time scales by
-increase in stream FPOM, which later stimulates heterotrophic activity,
-and , consequently, eDNA removal. Given the short time span of our
-study, this potential long-term effect of leaf litter in streams is
+removal rates,(Brandão-Dias et al., 2023) it is possible that the effect
+of leaf litter on eDNA removal occurs indirectly over longer time scales
+by increase in stream FPOM, which later stimulates heterotrophic
+activity, and , consequently, eDNA removal. Given the short time span of
+our study, this potential long-term effect of leaf litter in streams is
 understated.
 
 *4.2 Differences in particle size distribution moderate the effect of
@@ -581,16 +595,16 @@ biofilm effect on removal was particularly strong for the 0.4-μm
 particle size. This result contrasts with previous research in the same
 mesocosms where smaller and intermediate particles (0.2 μm and 1.0 μm,
 respectively) were removed at similar rates in mesocosms with
-biofilm-colonized rocks (Snyder et al. 2023).<sup>28</sup> Differences
-in the amount of each substrate applied to each mesocosm may have
-influenced these contrasting trends. For our high-density leaf
+biofilm-colonized rocks (Snyder et al. 2023).(Snyder et al., 2023)
+Differences in the amount of each substrate applied to each mesocosm may
+have influenced these contrasting trends. For our high-density leaf
 treatments, we added 0.462 m<sup>2</sup> of leaves to each mesocosm on
 average, while a mesocosm filled with pea gravel, such as those used in
-Brandão-Dias et al. (2023b),<sup>54</sup> had a substrate surface area
-of ~3X higher at 1.27 m<sup>2</sup>. Their study also found that the
-addition of pea-gravel substrate was more strongly associated with the
-removal of larger (10 μm) eDNA particles relative to smaller and
-intermediate sizes (0.2 and 1.0 μm). Not only was the physical
+Brandão-Dias et al. (2023b),(Brandão-Dias et al., 2023) had a substrate
+surface area of ~3X higher at 1.27 m<sup>2</sup>. Their study also found
+that the addition of pea-gravel substrate was more strongly associated
+with the removal of larger (10 μm) eDNA particles relative to smaller
+and intermediate sizes (0.2 and 1.0 μm). Not only was the physical
 contribution of leaves to mesocosm surface area lower relative to pea
 gravel, this result indicated that eDNA at the filter sizes used here
 (0.4 and 1.2μm) might also be less influenced by physical trapping via
@@ -697,217 +711,259 @@ Notre Dame as part of his undergraduate thesis.
 
 REFERENCES
 
-1\. Rees, H. C., Maddison, B. C., Middleditch, D. J., Patmore, J. R. M.
-& Gough, K. C. REVIEW: The detection of aquatic animal species using
-environmental DNA – a review of eDNA as a survey tool in ecology.
-*Journal of Applied Ecology* **51**, 1450–1459 (2014).
+Argerich, A., Martí, E., Sabater, F., Ribot, M., Von Schiller, D.,
+Riera, J.L., 2008. Combined effects of leaf litter inputs and a flood on
+nutrient retention in a Mediterranean mountain stream during fall.
+Limnology & Oceanography 53, 631–641.
+https://doi.org/10.4319/lo.2008.53.2.0631
 
-2\. Magurran, A. E. *Measuring Biological Diversity*. (Blackwell Pub,
-Malden, Ma, 2004).
-
-3\. Guisan, A. & Thuiller, W. Predicting species distribution: offering
-more than simple habitat models. *Ecology Letters* **8**, 993–1009
-(2005).
-
-4\. Fediajevaite, J., Priestley, V., Arnold, R. & Savolainen, V.
-Meta‐analysis shows that environmental DNA outperforms traditional
-surveys, but warrants better reporting standards. *Ecol. Evol.* **11**,
-4803–4815 (2021).
-
-5\. Austen, G. E., Bindemann, M., Griffiths, R. A. & Roberts, D. L.
+Austen, G.E., Bindemann, M., Griffiths, R.A., Roberts, D.L., 2016.
 Species identification by experts and non-experts: comparing images from
-field guides. *Sci Rep* **6**, 33634 (2016).
+field guides. Sci Rep 6, 33634. https://doi.org/10.1038/srep33634
 
-6\. Jerde, C. L., Mahon, A. R., Chadderton, W. L. & Lodge, D. M.
-“Sight-unseen” detection of rare aquatic species using environmental
-DNA: eDNA surveillance of rare aquatic species. *Conservation Letters*
-**4**, 150–157 (2011).
+Bärlocher, F., 1980. Leaf-eating invertebrates as competitors of aquatic
+hyphomycetes. Oecologia 47, 303–306. https://doi.org/10.1007/BF00398521
 
-7\. Barnes, M. A. & Turner, C. R. The ecology of environmental DNA and
-implications for conservation genetics. *Conserv Genet* **17**, 1–17
-(2016).
+Barnes, M.A., Turner, C.R., 2016. The ecology of environmental DNA and
+implications for conservation genetics. Conserv Genet 17, 1–17.
+https://doi.org/10.1007/s10592-015-0775-4
 
-8\. Deiner, K. & Altermatt, F. Transport Distance of Invertebrate
-Environmental DNA in a Natural River. *PLoS ONE* **9**, e88786 (2014).
+Barry J. F. Biggs, 1996. Patterns in Benthic Algae of Streams, in: Algal
+Ecology: Freshwater Benthic Ecosystems, Aquatic Ecology Series. Academic
+Press, San Diego, pp. 31–56.
 
-9\. Shogren, A. J. *et al.* Modelling the transport of environmental DNA
-through a porous substrate using continuous flow-through column
-experiments. *J. R. Soc. Interface.* **13**, 20160290 (2016).
+Bates, D., Mächler, M., Bolker, B., Walker, S., 2015. Fitting Linear
+Mixed-Effects Models Using lme4. Journal of Statistical Software 67,
+1–48. https://doi.org/10.18637/jss.v067.i01
 
-10\. Zhao, B., Van Bodegom, P. M. & Trimbos, K. The particle size
-distribution of environmental DNA varies with species and degradation.
-*Science of The Total Environment* **797**, 149175 (2021).
+Brandão-Dias, P.F.. P., Tank, J.L., Snyder, E.D., Mahl, U.H., Peters,
+B., Bolster, D., Shogren, A.J., Lamberti, G.A., Bibby, K., Egan, S.P.,
+2023. Suspended Materials Affect Particle Size Distribution and Removal
+of Environmental DNA in Flowing Waters. Environ. Sci. Technol.
+acs.est.3c02638. https://doi.org/10.1021/acs.est.3c02638
 
-11\. Brandão‐Dias, P. F. P. *et al.* Particle size influences decay
-rates of environmental DNA in aquatic systems. *Molecular Ecology
-Resources* 1755–0998.13751 (2023) doi:10.1111/1755-0998.13751.
+Brandão‐Dias, P.F.P., Hallack, D.M.C., Snyder, E.D., Tank, J.L.,
+Bolster, D., Volponi, S., Shogren, A.J., Lamberti, G.A., Bibby, K.,
+Egan, S.P., 2023. Particle size influences decay rates of environmental
+DNA in aquatic systems. Molecular Ecology Resources 1755–0998.13751.
+https://doi.org/10.1111/1755-0998.13751
 
-12\. Thalinger, B. *et al.* Lateral and longitudinal fish environmental
-DNA distribution in dynamic riverine habitats. *Environmental DNA*
-**3**, 305–318 (2021).
+Brandão-Dias P.F.P., Snyder E.D., Tank J.L., Mahl, U.H., Beters, B.,
+Shogren A.J., Bolster D., Lamberti G.A., Bibby K, Egan S., n.d.
+Environmental DNA ecology is better associated with particle size than
+molecule length in recirculating streams. Under review in Environmental
+DNA.
 
-13\. Strickler, K. M., Fremier, A. K. & Goldberg, C. S. Quantifying
-effects of UV-B, temperature, and pH on eDNA degradation in aquatic
-microcosms. *Biological Conservation* **183**, 85–92 (2015).
+Buxton, A.S., Groombridge, J.J., Zakaria, N.B., Griffiths, R.A., 2017.
+Seasonal variation in environmental DNA in relation to population size
+and environmental factors. Sci Rep 7, 46294.
+https://doi.org/10.1038/srep46294
 
-14\. Shogren, A. J. *et al.* Controls on eDNA movement in streams:
-Transport, Retention, and Resuspension. *Sci Rep* **7**, 5065 (2017).
+Cribari-Neto, F., Zeileis, A., 2010. Beta Regression in R. Journal of
+Statistical Software 34, 1–24. https://doi.org/10.18637/jss.v034.i02
 
-15\. Dettinger, M. D. & Diaz, H. F. Global Characteristics of Stream
-Flow Seasonality and Variability. *J. Hydrometeor* **1**, 289–310
-(2000).
+Curtis, A.N., Tiemann, J.S., Douglass, S.A., Davis, M.A., Larson, E.R.,
+2021. High stream flows dilute environmental DNA (eDNA) concentrations
+and reduce detectability. Diversity and Distributions 27, 1918–1931.
+https://doi.org/10.1111/ddi.13196
 
-16\. Hullar, M. A. J., Kaplan, L. A. & Stahl, D. A. Recurring Seasonal
-Dynamics of Microbial Communities in Stream Habitats. *Appl Environ
-Microbiol* **72**, 713–722 (2006).
-
-17\. Polato, N. R. *et al.* Narrow thermal tolerance and low dispersal
-drive higher speciation in tropical mountains. *Proc. Natl. Acad. Sci.
-U.S.A.* **115**, 12471–12476 (2018).
-
-18\. de Souza, L. S., Godwin, J. C., Renshaw, M. A. & Larson, E.
+de Souza, L.S., Godwin, J.C., Renshaw, M.A., Larson, E., 2016.
 Environmental DNA (eDNA) Detection Probability Is Influenced by Seasonal
-Activity of Organisms. *PLoS ONE* **11**, e0165273 (2016).
+Activity of Organisms. PLoS ONE 11, e0165273.
+https://doi.org/10.1371/journal.pone.0165273
 
-19\. Buxton, A. S., Groombridge, J. J., Zakaria, N. B. & Griffiths, R.
-A. Seasonal variation in environmental DNA in relation to population
-size and environmental factors. *Sci Rep* **7**, 46294 (2017).
+Deiner, K., Altermatt, F., 2014. Transport Distance of Invertebrate
+Environmental DNA in a Natural River. PLoS ONE 9, e88786.
+https://doi.org/10.1371/journal.pone.0088786
 
-20\. Curtis, A. N., Tiemann, J. S., Douglass, S. A., Davis, M. A. &
-Larson, E. R. High stream flows dilute environmental DNA (eDNA)
-concentrations and reduce detectability. *Diversity and Distributions*
-**27**, 1918–1931 (2021).
+Dettinger, M.D., Diaz, H.F., 2000. Global Characteristics of Stream Flow
+Seasonality and Variability. J. Hydrometeor 1, 289–310.
+https://doi.org/10.1175/1525-7541(2000)001&lt;0289:GCOSFS&gt;2.0.CO;2
 
-21\. Tank, J. L., Rosi-Marshall, E. J., Griffiths, N. A., Entrekin, S.
-A. & Stephen, M. L. A review of allochthonous organic matter dynamics
-and metabolism in streams. *Journal of the North American Benthological
-Society* **29**, 118–146 (2010).
-
-22\. Marks, J. C. Revisiting the Fates of Dead Leaves That Fall into
-Streams. *Annu. Rev. Ecol. Evol. Syst.* **50**, 547–568 (2019).
-
-23\. Wallace, J. B., Webster, J. R. & Cuffney, T. F. Stream detritus
-dynamics: Regulation by invertebrate consumers. *Oecologia* **53**,
-197–200 (1982).
-
-24\. Webster, J. R. *et al.* What happens to allochthonous material that
-falls into streams? A synthesis of new and published information from
-Coweeta. *Freshwater Biology* **41**, 687–705 (1999).
-
-25\. Meyer, J. L., Wallace, J. B. & Eggert, S. L. Leaf Litter as a
-Source of Dissolved Organic Carbon in Streams. *Ecosystems* **1**,
-240–249 (1998).
-
-26\. Marcarelli, A. M., Baxter, C. V., Mineau, M. M. & Hall, R. O.
-Quantity and quality: unifying food web and ecosystem perspectives on
-the role of resource subsidies in freshwaters. *Ecology* **92**,
-1215–1225 (2011).
-
-27\. Shogren, A. J. *et al.* Water Flow and Biofilm Cover Influence
-Environmental DNA Detection in Recirculating Streams. *Environ. Sci.
-Technol.* **52**, 8530–8537 (2018).
-
-28\. Snyder, E. D. *et al.* Environmental DNA (eDNA) removal rates in
-streams differ by particle size under varying substrate and light
-conditions. *Science of The Total Environment* **903**, 166469 (2023).
-
-29\. Zhao, B., Van Bodegom, P. M. & Trimbos, K. B. Bacterial abundance
-and pH associate with eDNA degradation in water from various aquatic
-ecosystems in a laboratory setting. *Front. Environ. Sci.* **11**,
-1025105 (2023).
-
-30\. Thomas, S. A. *et al.* The influence of particle size on seston
-deposition in streams. *Limnology & Oceanography* **46**, 1415–1424
-(2001).
-
-31\. Sambrook, J. & Russell, D. W. Purification of Nucleic Acids by
-Extraction with Phenol:Chloroform. *Cold Spring Harb Protoc* **2006**,
-pdb.prot4455 (2006).
-
-32\. Takahara, T., Minamoto, T., Yamanaka, H., Doi, H. & Kawabata, Z.
-Estimation of Fish Biomass Using Environmental DNA. *PLoS ONE* **7**,
-e35868 (2012).
-
-33\. Duda, J. J. *et al.* Environmental DNA is an effective tool to
+Duda, J.J., Hoy, M.S., Chase, D.M., Pess, G.R., Brenkman, S.J., McHenry,
+M.M., Ostberg, C.O., 2021. Environmental DNA is an effective tool to
 track recolonizing migratory fish following large-scale dam removal.
-*Environmental DNA* **3**, 121–141 (2021).
+Environmental DNA 3, 121–141. https://doi.org/10.1002/edn3.134
 
-34\. Klymus, K. E. *et al.* Reporting the limits of detection and
-quantification for environmental DNA assays. *Environmental DNA* **2**,
-271–282 (2020).
+Fediajevaite, J., Priestley, V., Arnold, R., Savolainen, V., 2021.
+Meta‐analysis shows that environmental DNA outperforms traditional
+surveys, but warrants better reporting standards. Ecol. Evol. 11,
+4803–4815. https://doi.org/10.1002/ece3.7382
 
-35\. Hall, R. O. & Hotchkiss, E. R. Stream Metabolism. in *Methods in
-Stream Ecology* 219–233 (Elsevier, 2017).
-doi:10.1016/B978-0-12-813047-6.00012-7.
+Goode, K., Rey, K., 2019. ggResidpanel: Panels and Interactive Versions
+of Diagnostic Plots using “ggplot2.”
 
-36\. R Core Team. R: A Language and Environment for Statistical
-Computing. R Foundation for Statistical Computing (2023).
+Guisan, A., Thuiller, W., 2005. Predicting species distribution:
+offering more than simple habitat models. Ecology Letters 8, 993–1009.
+https://doi.org/10.1111/j.1461-0248.2005.00792.x
 
-37\. Bates, D., Mächler, M., Bolker, B. & Walker, S. Fitting Linear
-Mixed-Effects Models Using lme4. *Journal of Statistical Software*
-**67**, 1–48 (2015).
+Hall, R.O., Hotchkiss, E.R., 2017. Stream Metabolism, in: Methods in
+Stream Ecology. Elsevier, pp. 219–233.
+https://doi.org/10.1016/B978-0-12-813047-6.00012-7
 
-38\. Lenth, R. V. *Emmeans: Estimated Marginal Means, Aka Least-Squares
-Means*. (2023).
+Harrell Jr, F.E., 2023. Hmisc: Harrell Miscellaneous.
 
-39\. Goode, K. & Rey, K. ggResidpanel: Panels and Interactive Versions
-of Diagnostic Plots using ‘ggplot2’. (2019).
+Hullar, M.A.J., Kaplan, L.A., Stahl, D.A., 2006. Recurring Seasonal
+Dynamics of Microbial Communities in Stream Habitats. Appl Environ
+Microbiol 72, 713–722. https://doi.org/10.1128/AEM.72.1.713-722.2006
 
-40\. Cribari-Neto, F. & Zeileis, A. Beta Regression in R. *Journal of
-Statistical Software* **34**, 1–24 (2010).
+Jerde, C.L., Mahon, A.R., Chadderton, W.L., Lodge, D.M., 2011.
+“Sight-unseen” detection of rare aquatic species using environmental
+DNA: eDNA surveillance of rare aquatic species. Conservation Letters 4,
+150–157. https://doi.org/10.1111/j.1755-263X.2010.00158.x
 
-41\. Harrell Jr, F. E. *Hmisc: Harrell Miscellaneous*. (2023).
+Jerde, C.L., Olds, B.P., Shogren, A.J., Andruszkiewicz, E.A., Mahon,
+A.R., Bolster, D., Tank, J.L., 2016. Influence of Stream Bottom
+Substrate on Retention and Transport of Vertebrate Environmental DNA.
+Environ. Sci. Technol. 50, 8770–8779.
+https://doi.org/10.1021/acs.est.6b01761
 
-42\. Jerde, C. L. *et al.* Influence of Stream Bottom Substrate on
-Retention and Transport of Vertebrate Environmental DNA. *Environ. Sci.
-Technol.* **50**, 8770–8779 (2016).
+Klymus, K.E., Merkes, C.M., Allison, M.J., Goldberg, C.S., Helbing,
+C.C., Hunter, M.E., Jackson, C.A., Lance, R.F., Mangan, A.M., Monroe,
+E.M., Piaggio, A.J., Stokdyk, J.P., Wilson, C.C., Richter, C.A., 2020.
+Reporting the limits of detection and quantification for environmental
+DNA assays. Environmental DNA 2, 271–282.
+https://doi.org/10.1002/edn3.29
 
-43\. Tabacchi, E. *et al.* Impacts of riparian vegetation on
-hydrological processes. *Hydrol. Process.* **14**, 2959–2976 (2000).
+Lance, R., Klymus, K., Richter, C., Guan, X., Farrington, H., Carr, M.,
+Thompson, N., Chapman, D., Baerwaldt, K., 2017. Experimental
+observations on the decay of environmental DNA from bighead and silver
+carps. MBI 8, 343–359. https://doi.org/10.3391/mbi.2017.8.3.08
 
-44\. Argerich, A. *et al.* Combined effects of leaf litter inputs and a
-flood on nutrient retention in a Mediterranean mountain stream during
-fall. *Limnology & Oceanography* **53**, 631–641 (2008).
+Lenth, R.V., 2023. emmeans: Estimated Marginal Means, aka Least-Squares
+Means.
 
-45\. Roche, K. R. *et al.* Benthic biofilm controls on fine particle
-dynamics in streams. *Water Resources Research* **53**, 222–236 (2017).
+Magurran, A.E., 2004. Measuring biological diversity. Blackwell Pub,
+Malden, Ma.
 
-46\. Lance, R. *et al.* Experimental observations on the decay of
-environmental DNA from bighead and silver carps. *MBI* **8**, 343–359
-(2017).
+Marcarelli, A.M., Baxter, C.V., Mineau, M.M., Hall, R.O., 2011. Quantity
+and quality: unifying food web and ecosystem perspectives on the role of
+resource subsidies in freshwaters. Ecology 92, 1215–1225.
+https://doi.org/10.1890/10-2240.1
 
-47\. Rivera, S. F., Vasselon, V., Bouchez, A. & Rimet, F. eDNA
+Marks, J.C., 2019. Revisiting the Fates of Dead Leaves That Fall into
+Streams. Annu. Rev. Ecol. Evol. Syst. 50, 547–568.
+https://doi.org/10.1146/annurev-ecolsys-110218-024755
+
+Meyer, J.L., Wallace, J.B., Eggert, S.L., 1998. Leaf Litter as a Source
+of Dissolved Organic Carbon in Streams. Ecosystems 1, 240–249.
+https://doi.org/10.1007/s100219900019
+
+Polato, N.R., Gill, B.A., Shah, A.A., Gray, M.M., Casner, K.L.,
+Barthelet, A., Messer, P.W., Simmons, M.P., Guayasamin, J.M., Encalada,
+A.C., Kondratieff, B.C., Flecker, A.S., Thomas, S.A., Ghalambor, C.K.,
+Poff, N.L., Funk, W.C., Zamudio, K.R., 2018. Narrow thermal tolerance
+and low dispersal drive higher speciation in tropical mountains. Proc.
+Natl. Acad. Sci. U.S.A. 115, 12471–12476.
+https://doi.org/10.1073/pnas.1809326115
+
+R Core Team, 2023. R: A Language and Environment for Statistical
+Computing.
+
+Rees, H.C., Maddison, B.C., Middleditch, D.J., Patmore, J.R.M., Gough,
+K.C., 2014. REVIEW: The detection of aquatic animal species using
+environmental DNA – a review of eDNA as a survey tool in ecology.
+Journal of Applied Ecology 51, 1450–1459.
+https://doi.org/10.1111/1365-2664.12306
+
+Rivera, S.F., Vasselon, V., Bouchez, A., Rimet, F., 2023. eDNA
 metabarcoding from aquatic biofilms allows studying spatial and temporal
-fluctuations of fish communities from Lake Geneva. *Environmental DNA*
-edn3.413 (2023) doi:10.1002/edn3.413.
+fluctuations of fish communities from Lake Geneva. Environmental DNA
+edn3.413. https://doi.org/10.1002/edn3.413
 
-48\. Whitchurch, C. B., Tolker-Nielsen, T., Ragas, P. C. & Mattick, J.
-S. Extracellular DNA Required for Bacterial Biofilm Formation. *Science*
-**295**, 1487–1487 (2002).
+Roche, K.R., Drummond, J.D., Boano, F., Packman, A.I., Battin, T.J.,
+Hunter, W.R., 2017. Benthic biofilm controls on fine particle dynamics
+in streams. Water Resources Research 53, 222–236.
+https://doi.org/10.1002/2016WR019041
 
-49\. Brandão-Dias P.F.P. *et al.* Environmental DNA ecology is better
-associated with particle size than molecule length in recirculating
-streams. *Under review in Environmental DNA*.
+Sambrook, J., Russell, D.W., 2006. Purification of Nucleic Acids by
+Extraction with Phenol:Chloroform. Cold Spring Harb Protoc 2006,
+pdb.prot4455. https://doi.org/10.1101/pdb.prot4455
 
-50\. Suberkropp, K. & Klug, M. J. The maceration of deciduous leaf
-litter by aquatic hyphomycetes. *Can. J. Bot.* **58**, 1025–1031 (1980).
+Shogren, A.J., Tank, J.L., Andruszkiewicz, E., Olds, B., Mahon, A.R.,
+Jerde, C.L., Bolster, D., 2017. Controls on eDNA movement in streams:
+Transport, Retention, and Resuspension. Sci Rep 7, 5065.
+https://doi.org/10.1038/s41598-017-05223-1
 
-51\. Barry J. F. Biggs. Patterns in Benthic Algae of Streams. in *Algal
-ecology: freshwater benthic ecosystems* 31–56 (Academic Press, San
-Diego, 1996).
+Shogren, A.J., Tank, J.L., Andruszkiewicz, E.A., Olds, B., Jerde, C.,
+Bolster, D., 2016. Modelling the transport of environmental DNA through
+a porous substrate using continuous flow-through column experiments. J.
+R. Soc. Interface. 13, 20160290. https://doi.org/10.1098/rsif.2016.0290
 
-52\. Tank, J. L. & Winterbourn, M. J. Microbial activity and
-invertebrate colonisation of wood in a New Zealand forest stream. *New
-Zealand Journal of Marine and Freshwater Research* **30**, 271–280
-(1996).
+Shogren, A.J., Tank, J.L., Egan, S.P., August, O., Rosi, E.J., Hanrahan,
+B.R., Renshaw, M.A., Gantz, C.A., Bolster, D., 2018. Water Flow and
+Biofilm Cover Influence Environmental DNA Detection in Recirculating
+Streams. Environ. Sci. Technol. 52, 8530–8537.
+https://doi.org/10.1021/acs.est.8b01822
 
-53\. Bärlocher, F. Leaf-eating invertebrates as competitors of aquatic
-hyphomycetes. *Oecologia* **47**, 303–306 (1980).
+Snyder, E.D., Tank, J.L., Brandão-Dias, P.F.P., Bibby, K., Shogren,
+A.J., Bivins, A.W., Peters, B., Curtis, E.M., Bolster, D., Egan, S.P.,
+Lamberti, G.A., 2023. Environmental DNA (eDNA) removal rates in streams
+differ by particle size under varying substrate and light conditions.
+Science of The Total Environment 903, 166469.
+https://doi.org/10.1016/j.scitotenv.2023.166469
 
-54\. Brandão-Dias, P. F. . P. *et al.* Suspended Materials Affect
-Particle Size Distribution and Removal of Environmental DNA in Flowing
-Waters. *Environ. Sci. Technol.* acs.est.3c02638 (2023)
-doi:10.1021/acs.est.3c02638.
+Strickler, K.M., Fremier, A.K., Goldberg, C.S., 2015. Quantifying
+effects of UV-B, temperature, and pH on eDNA degradation in aquatic
+microcosms. Biological Conservation 183, 85–92.
+https://doi.org/10.1016/j.biocon.2014.11.038
+
+Suberkropp, K., Klug, M.J., 1980. The maceration of deciduous leaf
+litter by aquatic hyphomycetes. Can. J. Bot. 58, 1025–1031.
+https://doi.org/10.1139/b80-126
+
+Tabacchi, E., Lambs, L., Guilloy, H., Planty-Tabacchi, A.-M., Muller,
+E., Décamps, H., 2000. Impacts of riparian vegetation on hydrological
+processes. Hydrol. Process. 14, 2959–2976.
+https://doi.org/10.1002/1099-1085(200011/12)14:16/17&lt;2959::AID-HYP129&gt;3.0.CO;2-B
+
+Takahara, T., Minamoto, T., Yamanaka, H., Doi, H., Kawabata, Z., 2012.
+Estimation of Fish Biomass Using Environmental DNA. PLoS ONE 7, e35868.
+https://doi.org/10.1371/journal.pone.0035868
+
+Tank, J.L., Rosi-Marshall, E.J., Griffiths, N.A., Entrekin, S.A.,
+Stephen, M.L., 2010. A review of allochthonous organic matter dynamics
+and metabolism in streams. Journal of the North American Benthological
+Society 29, 118–146. https://doi.org/10.1899/08-170.1
+
+Tank, J.L., Winterbourn, M.J., 1996. Microbial activity and invertebrate
+colonisation of wood in a New Zealand forest stream. New Zealand Journal
+of Marine and Freshwater Research 30, 271–280.
+https://doi.org/10.1080/00288330.1996.9516714
+
+Thalinger, B., Kirschner, D., Pütz, Y., Moritz, C., Schwarzenberger, R.,
+Wanzenböck, J., Traugott, M., 2021. Lateral and longitudinal fish
+environmental DNA distribution in dynamic riverine habitats.
+Environmental DNA 3, 305–318. https://doi.org/10.1002/edn3.171
+
+Thomas, S.A., Newbold, J.D., Monaghan, M.T., Minshall, G.W., Georgian,
+T., Cushing, C.E., 2001. The influence of particle size on seston
+deposition in streams. Limnology & Oceanography 46, 1415–1424.
+https://doi.org/10.4319/lo.2001.46.6.1415
+
+Wallace, J.B., Webster, J.R., Cuffney, T.F., 1982. Stream detritus
+dynamics: Regulation by invertebrate consumers. Oecologia 53, 197–200.
+https://doi.org/10.1007/BF00545663
+
+Webster, J.R., Benfield, E.F., Ehrman, T.P., Schaeffer, M.A., Tank,
+J.L., Hutchens, J.J., D’Angelo, D.J., 1999. What happens to
+allochthonous material that falls into streams? A synthesis of new and
+published information from Coweeta. Freshwater Biology 41, 687–705.
+https://doi.org/10.1046/j.1365-2427.1999.00409.x
+
+Whitchurch, C.B., Tolker-Nielsen, T., Ragas, P.C., Mattick, J.S., 2002.
+Extracellular DNA Required for Bacterial Biofilm Formation. Science 295,
+1487–1487. https://doi.org/10.1126/science.295.5559.1487
+
+Zhao, B., Van Bodegom, P.M., Trimbos, K., 2021. The particle size
+distribution of environmental DNA varies with species and degradation.
+Science of The Total Environment 797, 149175.
+https://doi.org/10.1016/j.scitotenv.2021.149175
+
+Zhao, B., Van Bodegom, P.M., Trimbos, K.B., 2023. Bacterial abundance
+and pH associate with eDNA degradation in water from various aquatic
+ecosystems in a laboratory setting. Front. Environ. Sci. 11, 1025105.
+https://doi.org/10.3389/fenvs.2023.1025105
 
 For Table of Contents Only
 
