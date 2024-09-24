@@ -7,7 +7,7 @@ Brandão-Dias††<sup>2</sup>, Kyle Bibby<sup>3</sup>, Arial J.
 Shogren<sup>4</sup>, Diogo Bolster<sup>3</sup>, Scott P.
 Egan<sup>2</sup>, Gary A. Lamberti<sup>1</sup>.
 
-AUTHOR ADDRESS**:**
+AUTHOR ADDRESSES**:**
 
 <sup>1</sup>Department of Biological Sciences, University of Notre Dame,
 100 Galvin Life Sciences, Notre Dame, IN 46556 USA, EMC:
@@ -25,10 +25,15 @@ Notre Dame, IN 46556 USA, KB: <kbibby@nd.edu>, DB: <dbolster@nd.edu> 
 Alabama, Science and Engineering Complex,1325 Hackberry Ln, Tuscaloosa,
 AL 35401, USA, AJS: <ashogren@ua.edu> 
 
-Present Addresses
+\*= Indicates Corresponding Authors
+
+PRESENT ADDRESSES:
 
 † Department of Ecology and Evolutionary Biology, University of Toronto,
 Toronto, Ontario M5S 1A1, Canada
+
+†† University of Washington, School of Marine and Environmental Affairs,
+Seattle, Washington, USA.
 
 ABSTRACT: Understanding what controls eDNA removal from the water column
 remains a critical challenge for interpreting eDNA results in flowing
@@ -664,27 +669,7 @@ RMarkdown Synopsis: complete reproduction of all analyses performed for
 this study; summary outputs of all statistical tests, code to generate
 each of the included figures (PDF)
 
-AUTHOR INFORMATION
-
-Corresponding Authors
-
-\*† Erik Curtis – Department of Biological Sciences, University of Notre
-Dame, Notre Dame, Indiana 46556, United States; Email:
-<erik.curtis@mail.utoronto.ca>
-
-\* Jennifer Tank – Department of Biological Sciences, University of
-Notre Dame, Notre Dame, Indiana 46556, Unites States; Email:
-<jtank@nd.edu>
-
-Present Addresses
-
-† Department of Ecology and Evolutionary Biology, University of Toronto,
-Toronto, Ontario M5S 1A1, Canada
-
-†† University of Washington, School of Marine and Environmental Affairs,
-Seattle, Washington, USA
-
-CRediT authorship Contribution Statement
+CRediT authorship Contribution Statement:
 
 **Erik Curtis**: Formal Analysis, Investigation, Data Curation, Writing
 – Original Draft, Visualization, **Jennifer L. Tank**:
@@ -704,6 +689,10 @@ Writing – Review and Editing, Funding Acquisition, Supervision.
 NOTES
 
 The authors declare no competing financial interest.
+
+DATA AVAILABILITY:
+
+Data is archived privately and will be made available upon request.
 
 ACKNOWLEDGMENTS
 
