@@ -1,0 +1,1185 @@
+---
+title: "BRMS update"
+author: "Eiptrik Curtis"
+date: "2024-12-10"
+output:
+  pdf_document: 
+    latex_engine: xelatex
+  html_document: default
+---
+
+# 1. Prepare Data
+
+Here we clean our data and prepare dataframes/.csv files for statistical analysis. This section takes the raw data from the ddPCR plate files ("/Data" directory) and separates it into 4 .csv's
+
+1.  LeafMesos-BKD.csv (Background samples from mesocosms pre-release)
+2.  LeafMesos-Controls.csv (Field blanks, Extraction blanks, and +/- PCR controls)
+3.  LeafMesos-ReleaseSolution.csv (eDNA source solution / buckets)
+4.  LeafMesos-Mesoscosms.csv (the release data)
+
+In addition, this script incorporates additional relevant data from the experiment, drawn from the "/Files" directory. This includes the volume of water filtered from each sample, as well as ancillary data (Temp, pH, water velocity, nutrient conc., etc.)
+
+```{r Directory + Packages, echo=T, message=F}
+knitr::opts_chunk$set(echo = TRUE)
+rm(list=objects())
+this.dir = dirname(rstudioapi::getActiveDocumentContext()$path)
+data.dir = paste0(this.dir,"/Data")
+files.dir = paste0(this.dir,"/Files")
+plots.dir = paste0(this.dir,"/Plots")
+setwd(this.dir)
+
+#Packages
+library(dplyr)
+library(ggpubr)
+library(ggsci)
+library(Rcpp)
+library(reshape)
+library(lubridate)
+library(naniar)
+library(gtools)
+library(tidyr)
+```
+
+Here, we prepare the raw data (.csv files obtained from the ddPCR machine) for analysis. Positive and negative controls are separated from experimental data, and reactions that failed (i.e. not enough separation between positive and negative droplet clouds) are removed.
+
+```{r Prep Data}
+#Create a blank dataframe
+Data.Full = data.frame(matrix(nrow= 0, ncol =0))
+
+#Load Data into Data.Full
+ 
+list = list.files(data.dir)
+list <- mixedsort(sort(list))
+for (i in 1:length(list)) {
+  Data.Full <-rbind(Data.Full, read.csv(paste0(data.dir,"/",list[i]) , row.names = ) %>% mutate(Run = i))
+}
+
+#Remove unnecessary columns from Quantasoft outputs
+Data.Full <- Data.Full %>% select(-c(2,3,5,7,9,11:14,17:21,23:41,43:63))
+
+#Remove failed wells (determined manually by looking at 1-D plot in QuantaSoft)
+#Failed reactions are identified by the plate number, and the well coordinates
+failed.Rxns <- c("1.F01", "1.F02", "1.F03", "7.C02", "7.C02", "8.C07", "8.C08",
+                 "8.C09", "8.F04", "8.F05", "8.F06", "8.C07", "8.C08", "8.C09",
+                 "9.B10", "9.B11", "9.B12", "10.C01", "10.C02","10.C03", "10.G04",
+                 "10.G05", "10.G06", "10.C10", "10.C11", "10.C12", "10.D10",
+                 "10.D11", "10.D12", "14.E07", "14.E08", "14.E09", "16.A04",
+                 "16.B04", "16.C04", "18.B06", "18.C05", "18.C06", "18.D06",
+                 "18.E05", "18.H04", "16.A01", "16.A02", "16.A03", "16.B01",
+                 "16.B02", "16.B03", "14.C07", "14.C08", "14.C09")  
+Data.Full <- Data.Full %>% mutate(Run.ID = paste(as.character(Run),Well,sep="."))
+Data.Full <- Data.Full %>% replace_with_na(list(Run.ID = failed.Rxns))
+Data.Full <- Data.Full %>% na.omit()
+Data.Full <- Data.Full %>% select(-c(11))
+
+
+#Separate experimental data from negative and positive controls
+#Information about each ddPCR reaction is encoded in "Sample"
+Data.NC <- Data.Full %>% 
+  subset(Sample != "Negative_CTL") %>% 
+  subset(Sample!= "Positive_CTL") %>% 
+  subset(substr(Sample,1,2) != "EB") %>% 
+  subset(substr(Sample,1,2) != "CB")
+
+Data.C <- Data.Full %>% 
+  subset(Sample == "Negative_CTL" |
+         Sample == "Positive_CTL" | 
+         substr(Sample,1,2) == "EB" | 
+         substr(Sample,1,2) == "CB")
+
+#Data about the sample is encoded in its name
+
+Data.NC <- Data.NC %>% 
+  cbind(colsplit.character(Data.NC$Sample,
+                           split="_", 
+                           names = c("Meso.Num", "Time", "Size","Dilution")
+                           )
+        ) %>% 
+  suppressWarnings()
+
+#Separate the release solution from sample data
+
+#BKT = Release Solution/Bucket Data
+Data.BKT <- subset(Data.NC, Time == "CARP" | Time == "STHD") 
+#NC = Not Control (i.e. sample data)
+Data.NC <- subset(Data.NC, Time != "CARP" & Time != "STHD")
+
+#Correct dilution factor for samples that were not diluted, replace with "1"
+rem <- c("M1","M2","M3","M4","M5","M6",
+         "M7","M8","M9","M10","M11","M12",
+         "M13","M14","M15","M16","M17","M18",
+         "M19","M20","M21","M22","M23","M24")
+Data.NC <- Data.NC %>% 
+  replace_with_na(list(Dilution = rem),"1x") 
+
+x <- Data.NC %>% 
+  subset(is.na(Dilution)) %>% 
+  mutate(Dilution = "1")
+
+Data.NC <- Data.NC %>% subset(!is.na(Dilution))
+Data.NC <- rbind(Data.NC, x)
+rm(x)
+
+#Some samples were diluted prior to ddPCR, so we need to scale their concentration accordingly.
+#We do this by multiplying by the dilution factor
+Data.NC <- Data.NC %>% mutate(Concentration = Concentration * as.double(Dilution))
+
+#Combining Technical Replicates
+
+#We ran each mesocosm sample in triplicate, and we want to combine these 3 values into a single value for concentration. 
+#We do this by summing the positive and negative droplets for all 3 ...
+
+x <- Data.NC %>% 
+  group_by(Sample, Target) %>% 
+  dplyr::summarize(Well = "*", 
+            Target = first(Target),
+            CopiesPer20uLWell = mean(CopiesPer20uLWell), 
+            Positives = sum(Positives), 
+            Negatives= sum(Negatives), 
+            AcceptedDroplets = sum(AcceptedDroplets), 
+            Threshold = mean(Threshold), 
+            Run = first(Run), 
+            Dilution = first(Dilution)
+            ) %>% 
+  suppressMessages()
+
+#Now we calucate concentration from the PDF of the Poisson Distribution 
+#Quantasoft applies this formula to each well to obtain the estimate for concentration; here we apply it to the sum of three wells
+#In this formula, 0.000848 uL is the average volume of a droplet during ddPCR (Given by Quantasoft)
+ 
+x <- x %>% 
+  mutate(Concentration = -log(Negatives/AcceptedDroplets)/0.000848)
+#Units for Concentration are gene copies per uL
+
+#Separate "Sample" again and fix dilution
+x <- x %>% 
+  cbind(colsplit.character(x$Sample, 
+                           split="_", 
+                           names = c("Meso.Num", "Time", "Size")
+                           ) 
+        ) %>% 
+  suppressWarnings()
+x <- x[-c(15)]
+x$Dilution <- as.numeric(x$Dilution)
+x <- x %>%  mutate(Concentration = Concentration*Dilution)
+
+#Recombine
+Data.NC <- x
+
+#Truncate concentration to 2 decimal places
+Data.NC$Concentration <- Data.NC$Concentration %>% 
+  round_any(accuracy = 0.01, f=floor)
+
+#Filter out BKD samples
+
+#BKD = Background data, i.e. samples taken prior to eDNA addition
+Data.BKD <- Data.NC %>% subset(Time == "BKD")
+#NC = Not Control (i.e. samples taken after eDNA addition)
+Data.NC <- Data.NC %>% subset(Time != "BKD")
+
+
+#Get volume filtered for each sample 
+Vol.Filtered <- read.csv(paste0(files.dir,"/FilteredVolume.csv"))
+Data.NC <- inner_join(Data.NC, Vol.Filtered, by=c('Meso.Num','Time','Size'))
+
+#Calculate the eDNA conc. in the water sample (GC.mL) given the concentration in the ddPCR reaction (Concentration, in GC / uL)
+#DNA from the sample is eluted in 50uL of buffer 
+# 4uL of this eluted DNA is added to 16 uL supermix (20 uL total rxn mixture)
+# After algebra, calculation is the following 
+
+Data.NC <- Data.NC %>% 
+  mutate(GC.mL = Concentration*250 /Vol.Filtered.mL)
+
+#Get mesocosm volume + ancillary for each mesocosm
+#This datasheet contains DOC, Temp, pH, turbidity, and most importantly, Mesocosm Volume for each time point
+Vol.Meso <- read.csv(paste0(files.dir,"/AncillaryFULL.csv"))
+Data.NC <- inner_join(Data.NC,Vol.Meso, by=c("Meso.Num","Time"))
+
+
+#Multiply GC.mL (concentration data) with Mesocosm volumes to get total number of gene copies in each mesocosm (count data)
+Data.NC <- Data.NC %>% mutate(Gc.mesocosm = GC.mL * Meso.Volume.mL)
+
+#Now adjust for diluted samples in release solution data
+Data.BKT <- Data.BKT %>% 
+  dplyr::rename(Bucket = Meso.Num, Rel.soln = "Time")
+
+X <- Data.BKT$Dilution
+Data.BKT$Dilution <- X %>%
+  replace(X == "BKT1"| X == "BKT2" | X =="BKT3" | X =="BKT4", "1")
+rm(X)
+
+#Adjust Concentration by dilution factor
+Data.BKT <- Data.BKT %>% 
+  mutate(Concentration = Concentration * as.double(Dilution))
+
+#Ignore Carp in STHD buckets and Steelhead in Carp Buckets (usually below LOD anyway)
+#Also remove run 15, samples needed diluting, positive cloud was too dense
+Data.BKT <- Data.BKT %>% subset(Target == Rel.soln & Run != 15 & Run != 13)
+
+#Calculate true concentration (Vol. Filtered was 100mL for every sample)
+Data.BKT <- Data.BKT %>% mutate(GC.mL = (Concentration*1000)/(4*100))
+
+#Export everything as .csv files to "Files" directory
+write.csv(Data.BKD, paste0(files.dir,"/LeafMesos-BKD.csv"))
+write.csv(Data.C, paste0(files.dir,"/LeafMesos-Controls.csv"))
+write.csv(Data.BKT, paste0(files.dir,"/LeafMesos-ReleaseSolution.csv"))
+write.csv(Data.NC, paste0(files.dir,"/LeafMesos-Mesoscosms.csv"))
+```
+
+# 2. Data Analysis
+
+Import packages, function definitions, color schemes, and themes for ggplot2 objects.
+
+```{r Directories + Packages, echo=T, message=F}
+library(ggplot2)
+library(plyr)
+library(dplyr)
+library(grid)
+library(tidyverse)
+library(GGally)
+library(Hmisc)
+library(stats)
+library(emmeans)
+library(ggpubr)
+library(lme4)
+library(rstatix)
+library(ggResidpanel)
+library(PCAtools)
+library(lmerTest)
+library(colourpicker)
+library(ggsignif)
+library(MuMIn)
+library(lmtest)
+library(vegan)
+library(gcookbook)
+library(ggfortify)
+library(patchwork)
+library(car)
+library(gridExtra)
+library(magrittr)
+library(gridExtra)
+library(betareg)
+rm(list=objects())
+
+this.dir = dirname(rstudioapi::getActiveDocumentContext()$path)
+data.dir = paste0(this.dir,"/Data")
+files.dir = paste0(this.dir,"/Files")
+plots.dir = paste0(this.dir,"/Plots")
+setwd(this.dir)
+
+#Functions
+#This function colors the facets of a ggplot2 object
+facetColor <- function(plot,colors) {
+  g <- ggplot_gtable(ggplot_build(plot))
+  strip_both <- which(grepl('strip-', g$layout$name))
+  fills <- colors
+  k <- 1
+  for (i in strip_both) {
+    j <- which(grepl('rect', g$grobs[[i]]$grobs[[1]]$childrenOrder))
+    g$grobs[[i]]$grobs[[1]]$children[[j]]$gp$fill <- fills[k]
+    k <- k+1
+  }
+  return(g)
+}
+
+## Annotation Function for plotting inset graphs
+annotation_custom2 <- function (grob, xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf, data) 
+{
+  layer(data = data, stat = StatIdentity, position = PositionIdentity, 
+        geom = ggplot2:::GeomCustomAnn,
+        inherit.aes = TRUE, params = list(grob = grob, 
+                                          xmin = xmin, xmax = xmax, 
+                                          ymin = ymin, ymax = ymax))
+}
+
+#Themes
+#Color palette 
+p1 <- c("gray81","#bdd7e7","#2171b5","#6baed6")
+p2 <- c("#f08080","#f4978e","#f8ad9d","#fbc4ab")
+p3 <- c("#dee2e6","#adb5bd","#495057","#212529",
+        "red","maroon","magenta","lavender")
+p4 <- c("#B7ECFF","#E8CDE9","#A0ABB2","#CDA969",
+        "#fcca46","#fe7f2d","#a1c181","#618f9b")
+p5 <- c("#A0ABB2","#CDA969","#fcca46","#fe7f2d","#a1c181",
+        "#618f9b","#f08080","#f4978e","#f8ad9d","#fbc4ab")
+p6 <- c("#A0ABB2","#CDA969","#fcca46","#fe7f2d",
+        "#a1c181","#618f9b","#B7ECFF","#E8CDE9")
+p7 <- c("#A0ABB2","#CDA969","#fcca46","#fe7f2d","#a1c181","#618f9b")
+p7.5 <- c("#89959c", "#b29155", "#e3b238", "#e76c1f", "#91aa73", "#547785")
+p8 <- c("#C5C7C9","#D9C196","#F0D27F","#F5985A","#B5C7A3","#79A7B3")
+p8.5 <- c("#E0E2E4", "#F3DDB1", "#FFEB9D", "#FFB782", "#D0E3BC", "#9ECBD7")
+p9 <- c(p7,p8)
+p9.5 <- c(p7.5, p8.5)
+p10 <- c("gray81","thistle1","mediumpurple1","darkorchid2")
+p11 <- c("#009AD0","#B7ECFF","#BD62CC","#E8CDE9")
+p12 <- c(p7, p8,p8,p8,p8)
+
+#Themes
+custom_theme = theme_bw()+theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+```
+
+Import and prepare data.
+
+```{r Step 1}
+#Load datafile   
+Mesos <- read.csv(paste0(files.dir,"/LeafMesos-Mesoscosms.csv"))
+Mesos <- Mesos[-1]
+
+# Cast columns to factors
+Mesos$Time <- as.factor(Mesos$Time)
+Mesos$Size <- as.factor(Mesos$Size)
+Mesos$Row <- as.factor(Mesos$Row)
+Mesos$Treatment <- as.factor(Mesos$Treatment)
+
+#Remove Mesocosm 15, too many issues in droplet cloud separation. 
+#Probably an extraction issue? Dust/particles in the samples?
+#Could also be an inhibition issue.
+Mesos <- Mesos %>% subset(Meso.Num != "M15")
+
+#Remove any 0's (or below LOD) to their own df for later
+#LOD is 3.8 GC/rxn for Carp and 3.2 GC/rxn for Steelhead
+Mesos.Full <- Mesos
+
+Mesos.Zeros <- Mesos %>% 
+  subset(GC.mL == 0 |
+           (Target=="CARP" & CopiesPer20uLWell < 3.8) |
+           (Target=="STHD" & CopiesPer20uLWell < 3.2)
+         )
+
+Mesos <- Mesos %>% 
+  subset(GC.mL != 0 & ((Target=="CARP" & CopiesPer20uLWell > 3.8) |
+                         (Target=="STHD" & CopiesPer20uLWell > 3.2)) 
+         )
+
+#Calculate LN for all GC.meso 
+Mesos$LNGc.meso = log(Mesos$Gc.mesocosm)
+
+#Set orders
+Mesos$Treatment = factor(Mesos$Treatment, 
+                         levels=c("ETO", "DOC","NCL","NCH","BFL","BFH"))
+
+### Export Slope Data ----
+X <- Mesos %>%
+  group_by(Meso.Num, Row, Target, Treatment, Size) %>%
+  do({
+    mod = lm(LNGc.meso ~ Time.hr, data = .)
+    data.frame(K = coef(mod)[2] *24)
+  }) 
+depthkey <- Mesos %>% 
+  group_by(Meso.Num) %>% 
+  dplyr::summarise(depth = mean(depth.m)) %>% 
+  suppressMessages()
+X$Trtmt <- X$Treatment
+X = subset(X,select = -Treatment)
+X <- inner_join(X, depthkey, by= "Meso.Num")
+
+X <- X %>% mutate(K_s = K / (60*60*24))
+X <- X %>% mutate(V_dep = K_s * depth * 1000)
+write.csv(X, paste0(files.dir,"/MesosRemovalRAW.csv"), row.names = FALSE)
+
+Raw <- X %>% 
+  group_by(Trtmt) %>% 
+  dplyr::summarise(Removal = mean(K), se = sd(K)/sqrt(n())) %>%
+  suppressMessages()
+  
+Raw_Size <- X %>% 
+  group_by(Trtmt,Size,Target) %>% 
+  dplyr::summarise(Removal = mean(K), se = sd(K)/sqrt(n())) %>%
+  suppressMessages()
+
+# For values below the LOD, set conc. to 1/2 the limit of detection.
+# These values represent a small proportion of the total data, so we excluded them from the statistical analyses
+Mesos.Zeros <- Mesos.Zeros %>% 
+  mutate(Gc.mesocosm = ifelse(Target == "CARP", 0.475*Meso.Volume.mL, 0.4*Meso.Volume.mL))
+Mesos.Zeros$LNGc.meso = log(Mesos.Zeros$Gc.mesocosm) 
+Mesos.Zeros$Well <- factor(Mesos.Zeros$Well, levels = c("*","%"))
+
+# Here we calculate the proportion of each size class within a sample
+Mesos.Sum <- rbind(Mesos[c(1:36)], Mesos.Zeros) %>% 
+  group_by(Time, Target, Meso.Num) %>% 
+  dplyr::summarise(n = sum(Gc.mesocosm)) %>% 
+  suppressMessages()
+Mesos.prop <- inner_join(rbind(Mesos[c(1:36)], Mesos.Zeros), Mesos.Sum, by=c("Time","Target","Meso.Num"))
+Mesos.prop <- Mesos.prop %>% mutate(prop = Gc.mesocosm / n)
+#Set order of treatment variables
+Mesos.prop$Treatment = factor(Mesos.prop$Treatment, levels=c("ETO", "DOC", "NCL","NCH","BFL","BFH"))
+
+# Proportion data can be summarized by averaging
+Mesos.Comb <- Mesos.prop %>% 
+  group_by(Time.hr, Target, Size, Treatment) %>% 
+  dplyr::summarise(prop = sum(prop)/4, Gc.mesocosm = sum(Gc.mesocosm)/4) %>%
+  mutate(Gc.mesocosm = ifelse(Treatment=="DOC", (4/3)*Gc.mesocosm, Gc.mesocosm)) %>% 
+  mutate(prop = ifelse(Treatment=="DOC", (4/3)*prop, prop)) %>% 
+  #Means for DOC treatment are adjust because n=3, not n=4
+  suppressMessages()
+
+#Set order of treatment variables
+Mesos.Comb$Treatment = factor(Mesos.Comb$Treatment, levels=c("ETO", "DOC","NCL","NCH","BFL","BFH"))
+
+
+#Import Data from Release solution
+Rel <- read.csv(paste0(files.dir,"/LeafMesos-ReleaseSolution.csv"))
+
+#Cast to factors
+Rel$Bucket <- as.factor(Rel$Bucket)
+Rel$Size <- as.factor(Rel$Size)
+Rel$Target <- as.factor(Rel$Target)
+
+#Average
+Rel <- Rel %>% group_by(Bucket, Target, Size) %>% 
+  dplyr::summarise(GC.mL = mean(GC.mL)) %>% 
+  suppressMessages()
+
+#Get proportions 
+Rel.Prop <- Rel %>% 
+  group_by(Bucket, Target) %>% 
+  dplyr::summarise(n = sum(GC.mL)) %>% 
+  suppressMessages()
+Rel.Prop <- inner_join(Rel, Rel.Prop, by=c("Bucket", "Target"))
+Rel.Prop <- Rel.Prop %>% mutate(prop = GC.mL / n)
+
+#Check that PSD is consistent between species
+Rel.mod <- aov(prop ~ Target, data = Rel.Prop %>% subset(Size == "1.2"))
+summary(Rel.mod) # p = 0.006, so starting PSD is significantly different 
+TukeyHSD(Rel.mod) # Carp 1.2 um is about 6.5% higher than Steelhead
+
+#Prep Metabolism 
+# Set positive ER values to 0, and calculate Leaf ER based on difference between the two.
+# 0.001344 m^2 is the area of the 5 leaf disks in each tube
+Mesos <- Mesos %>% mutate(Total.ER.mg.hr = ifelse(Total.ER.mg.hr > 0, 0, Total.ER.mg.hr))
+Mesos <- Mesos %>% mutate(Water.ER.mg.hr.L = ifelse(Water.ER.mg.hr.L > 0, 0, Water.ER.mg.hr.L))
+Mesos <- Mesos %>% mutate(Leaf.ER.mg.hr.m2 = (Total.ER.mg.hr - Water.ER.mg.hr.L*0.045)/0.001344)
+Mesos <- Mesos %>% mutate(Leaf.ER.mg.hr.m2 = ifelse(Leaf.ER.mg.hr.m2 > 0, 0, Leaf.ER.mg.hr.m2))
+
+#Now calculate total Mesocosm ER rate (in mg/hr)
+#Note: each bag of leaves contained 0.077 m^2 of leaves, on average. 
+# High treatements: 6 bags, Low treatments: 3 bags
+Mesos <- Mesos %>% mutate(Mesocosm.ER.mg.hr = case_when(
+  Treatment == "ETO" | Treatment == "DOC" ~ Water.ER.mg.hr.L*Meso.Volume.mL/1000,
+  Treatment == "NCL" | Treatment == "BFL" ~ Water.ER.mg.hr.L*Meso.Volume.mL/1000+3*0.077*Leaf.ER.mg.hr.m2,
+  Treatment == "NCH" | Treatment == "BFH" ~ Water.ER.mg.hr.L*Meso.Volume.mL/1000+6*0.077*Leaf.ER.mg.hr.m2
+  )
+)
+
+#Build dataframes for analyzing ancillary varibles
+
+#For Ancillary variables collected at all time points:
+Mesos.small <- rbind(Mesos[1:36],Mesos.Zeros) %>% 
+  group_by(Time,Meso.Num) %>% 
+  dplyr::summarise(
+    Treatment=first(Treatment),
+    Time=first(Time),
+    Time.hr=first(Time.hr),
+    temp.C = first(temp.C),
+    pH = first(pH),
+    turbidity.NTU = first(turbidity.NTU)
+  ) %>% 
+  suppressMessages()
+
+#For Ancillary variables collected at T1 and T4 only
+Mesos.mid <- rbind(Mesos[1:36],Mesos.Zeros) %>% 
+  group_by(Time, Meso.Num) %>% 
+  dplyr::summarise(
+    Treatment=first(Treatment),
+    Time=first(Time),
+    Time.hr=first(Time.hr),
+    doc.mg.L = first(doc.mg.L),
+    NH4.ugN.L = first(NH4.ugN.L),
+    NO3.ugN.L = first(NO3.ugN.L),
+    SRP.ugP.L =first(SRP.ugP.L)
+  ) %>% 
+  subset(Time=="T1A" | Time=="T4") %>% 
+  suppressMessages()
+
+#For Ancillary variables colleceted only once
+Mesos.tiny <- Mesos %>% 
+  group_by(Time, Meso.Num) %>% 
+  dplyr::summarise(
+    Treatment=first(Treatment),
+    Time=first(Time),
+    Time.hr=first(Time.hr),
+    Water.ER.mg.hr.L = first(Water.ER.mg.hr.L),
+    Leaf.ER.mg.hr.m2 = first(Leaf.ER.mg.hr.m2),
+    Mesocosm.ER.mg.hr = first(Mesocosm.ER.mg.hr),
+    #also add the rest, we will need them for the correlation matrix later
+    doc.mg.L = first(doc.mg.L),
+    NH4.ugN.L = first(NH4.ugN.L),
+    NO3.ugN.L = first(NO3.ugN.L),
+    SRP.ugP.L =first(SRP.ugP.L),
+    temp.C = first(temp.C),
+    pH = first(pH),
+    turbidity.NTU = first(turbidity.NTU),
+    Treatment = first(Treatment)
+  ) %>% 
+  subset(Time=="T1A") %>% 
+  suppressMessages()
+```
+
+Now, we run our main statistical analysis.
+
+```{r Step 2}
+#Change time to days, so that units for removal will be /day
+Mesos <- Mesos %>% mutate(Time.days = Time.hr/24)
+
+#Mixed-effect/hierarchical model, b.c. of repeated measures within mesocosms
+
+mixed.mod <- lmer(LNGc.meso ~ Time.days:Treatment*Size*Target + 
+                     (1 + Time.days|Meso.Num), data = Mesos, REML = FALSE)
+
+#Examine residual plots
+MixedResids <- resid_panel(mixed.mod, plots = "all")
+MixedResids
+#Response vs. Predicted is strong, and QQ plot looks fine. 
+#Roughly normal distribution of residuals, although low outliers exist
+shapiro.test(resid(mixed.mod)) # Shapiro test confirms this
+
+#Model Summary
+summary(mixed.mod)
+
+#Export coefficients from the fixed portion of model
+fixed_effects <- fixef(mixed.mod)
+random_effects <- ranef(mixed.mod)$Meso.Num
+
+# Append model fit to dataframe
+fit <- Mesos
+fit$resids <- resid(mixed.mod)
+fit <- fit %>% mutate(Conditional_Prediction = LNGc.meso - resids)
+fit$Marginal_Prediction = predict(mixed.mod, re.form=NA)
+
+#Generate the data for Table 3
+tab3 <- tidy(anova(mixed.mod)) %>% suppressMessages()
+tab3
+
+
+#The emtrends() function uses a difference quotient to estimate 
+#the slope of a line fitted to a given variable.
+# We apply emtrends to estimate the slope of "LN.Gc" according to the numerical covariate "Time.days"
+# This gives us an estimate of removal (in /day) according to our categorical predictors (Treatment, eDNA particle size, and Target organism)
+
+Treatment <- emtrends(mixed.mod,"Treatment", var = "Time.days") 
+Size <- emtrends(mixed.mod,"Size", var = "Time.days") 
+Target <- emtrends(mixed.mod,"Target", var = "Time.days")
+#Interactions are significant here, so be careful interpreting these results.
+#In the text, we present these results simultaneously with the results from the
+# full model, so as not to misrepresent the complexity of the interactions. 
+
+#Save removal estimates for barplots
+Treatment.Slopes <- as.data.frame(Treatment)
+Size.Slopes <- as.data.frame(Size)
+Target.Slopes <- as.data.frame(Target)
+
+#Pairwise post-hoc (uses a Tukey by default). 
+pairs(Treatment)
+Treatment_pairwise <- pairs(Treatment) %>% as.data.frame()
+
+pairs(Size)
+Size_pairwise <- pairs(Size) %>% as.data.frame()
+
+pairs(Target)
+Target_pairwise <- pairs(Target) %>% as.data.frame()
+
+
+
+#Separate by treatment and size
+Treatment_Size <- emtrends(mixed.mod, c("Treatment","Size"), var = "Time.days")
+Treatment_Size
+
+pairs(Treatment_Size, by="Size")
+pairs(Treatment_Size, by="Treatment")
+
+Treatment_Size.Slopes <- as.data.frame(Treatment_Size)
+
+#Separate by size and target
+Target_Size <- emtrends(mixed.mod, c("Target", "Size"), var = "Time.days")
+Target_Size
+pairs(Target_Size)
+
+Target_Size.Slopes <- as.data.frame(Target_Size)
+
+#Separate by target and treatment
+Target_Treatment <- emtrends(mixed.mod, c("Target", "Treatment"), var = "Time.days")
+Target_Treatment.Slopes <- as.data.frame(Target_Treatment)
+
+pairs(Target_Treatment, by="Target")
+pairs(Target_Treatment, by="Treatment")
+
+
+#Lastly, look at removal based on all three factors
+#Most accurate comparison due to interactions between the three. 
+Final <- emtrends(mixed.mod,c("Treatment","Size","Target"), var = "Time.days")
+Final
+
+Final.Slopes <- as.data.frame(Final)
+Final.Slopes
+
+#Pairwise Comparisons for D)
+pairs(Final, by=c("Size","Target"))
+
+write.csv(Final.Slopes, file=paste0(files.dir,"/MesosRemovalMODEL.csv"), row.names=F)
+
+#PSD Change Stats
+
+#Here we use a GLM w/ beta distribution to determine if the proportion of eDNA size fractions changes over time within our mesocosms. 
+
+#Start with Carp
+Carp.prop <- Mesos.prop %>% 
+  subset(Size == "1.2" & Target == "CARP" & prop!=0 & prop!=1)
+  
+beta_Carp = betareg(prop ~ Treatment:Time.hr, data = Carp.prop)
+lrtest(beta_Carp)
+summary(beta_Carp)
+#Prop. of 1.2 um eDNA is decreasing for most Carp treatments
+
+#Now do Steelhead
+Sthd.prop <- Mesos.prop %>% 
+  subset(Size == "1.2" & Target == "STHD" & prop!=0 & prop!=1)
+
+beta_Sthd = betareg(prop ~ Treatment:Time.hr, data = Sthd.prop)
+lrtest(beta_Sthd)
+summary(beta_Sthd)
+#Prop. of 1.2 um eDNA is increasing for most Sthd treatments
+
+```
+
+```{r Step 3 - Bayesian Alternative}
+#Change time to days, so that units for removal will be /day
+Mesos <- Mesos %>% mutate(Time.days = Time.hr/24)
+
+library(brms)
+library(bayestestR)
+
+#Mixed-effect/hierarchical model, b.c. of repeated measures within mesocosms
+
+mod <- brm(formula = LNGc.meso ~ Time.days:Treatment*Size*Target + 
+                     (1 + Time.days|Meso.Num),
+           data = Mesos,
+           family = gaussian(),
+           prior = c(set_prior("normal(0,10)", class = "b")
+                     ),
+           warmup = 1000, iter = 2000, chains = 8, cores=8,
+           control = list(adapt_delta = 0.8), 
+           
+           )
+
+#Converges very quickly.
+#Compare fixed effects between two approaches
+
+x<-fixef(mixed.mod) %>% as.numeric 
+y<-fixef(mod)[,c(T,F,F,F)] %>% as.numeric
+
+#Values are identical 
+plot(x,y) ; abline(a=0,b=1)
+
+#Cool, now check model 
+summary(mod)
+#Rhat = 1 for all params, ESS is very high.
+#Simple linear model with a good amount of datapoints, so unsurprising 
+
+#Now, we apply emmeans as before. 
+
+#Export coefficients from the fixed portion of model
+
+# Append model fit to dataframe
+fit <- Mesos
+fit$resids <- resid(mod)[,c(T,F,F,F)] %>% as.numeric
+fit <- fit %>% mutate(Conditional_Prediction = LNGc.meso - resids)
+fit$Marginal_Prediction = predict(mod, re.form=NA)[,c(T,F,F,F)] %>% as.numeric
+
+#The emtrends() function uses a difference quotient to estimate 
+#the slope of a line fitted to a given variable.
+# We apply emtrends to estimate the slope of "LN.Gc" according to the numerical covariate "Time.days"
+# This gives us an estimate of removal (in /day) according to our categorical predictors (Treatment, eDNA particle size, and Target organism)
+
+Treatment.em <- emtrends(mod,"Treatment", var = "Time.days") 
+Size.em <- emtrends(mod,"Size", var = "Time.days") 
+Target.em <- emtrends(mod,"Target", var = "Time.days")
+#Interactions are significant here, so be careful interpreting these results.
+#In the text, we present these results simultaneously with the results from the
+# full model, so as not to misrepresent the complexity of the interactions. 
+
+#Save removal estimates for barplots
+Treatment.Slopes <- as.data.frame(Treatment.em) %>% 
+  mutate(HPD.12.5 = ci(Treatment.em, method="HDI", ci=0.75)$CI_low,
+         HPD.87.5 = ci(Treatment.em, method="HDI", ci=0.75)$CI_high) %>% 
+  mutate(across(2:6,~.x*-1)) #set removal to positive units, by convention
+Size.Slopes <- as.data.frame(Size.em) %>% 
+  mutate(HPD.12.5 = ci(Size.em, method="HDI", ci=0.75)$CI_low,
+         HPD.87.5 = ci(Size.em, method="HDI", ci=0.75)$CI_high) %>% 
+  mutate(across(2:6,~.x*-1))
+Target.Slopes <- as.data.frame(Target.em) %>% 
+  mutate(HPD.12.5 = ci(Target.em, method="HDI", ci=0.75)$CI_low,
+         HPD.87.5 = ci(Target.em, method="HDI", ci=0.75)$CI_high) %>% 
+  mutate(across(2:6,~.x*-1))
+
+#Pairwise comparisons (no stats here)
+pairs(Treatment.em)
+Treatment_pairwise <- pairs(Treatment.em) %>% as.data.frame()
+
+pairs(Size.em)
+Size_pairwise <- pairs(Size.em) %>% as.data.frame()
+
+pairs(Target.em)
+Target_pairwise <- pairs(Target.em) %>% as.data.frame()
+
+#Separate by treatment and size
+Treatment_Size <- emtrends(mod, c("Treatment","Size"), var = "Time.days")
+Treatment_Size
+
+pairs(Treatment_Size, by="Size")
+pairs(Treatment_Size, by="Treatment")
+
+Treatment_Size.Slopes <- as.data.frame(Treatment_Size) %>% 
+  mutate(HPD.12.5 = ci(Treatment_Size, method="HDI", ci=0.75)$CI_low,
+         HPD.87.5 = ci(Treatment_Size, method="HDI", ci=0.75)$CI_high) %>% 
+  mutate(across(3:7,~.x*-1))
+
+#Separate by size and target
+Target_Size <- emtrends(mod, c("Target", "Size"), var = "Time.days")
+Target_Size
+pairs(Target_Size)
+
+Target_Size.Slopes <- as.data.frame(Target_Size) %>% 
+  mutate(HPD.12.5 = ci(Target_Size, method="HDI", ci=0.75)$CI_low,
+         HPD.87.5 = ci(Target_Size, method="HDI", ci=0.75)$CI_high) %>% 
+  mutate(across(3:7,~.x*-1))
+
+#Separate by target and treatment
+Target_Treatment <- emtrends(mod, c("Target", "Treatment"), var = "Time.days")
+Target_Treatment.Slopes <- as.data.frame(Target_Treatment) %>% 
+  mutate(HPD.12.5 = ci(Target_Treatment, method="HDI", ci=0.75)$CI_low,
+         HPD.87.5 = ci(Target_Treatment, method="HDI", ci=0.75)$CI_high) %>% 
+  mutate(across(3:7,~.x*-1))
+
+pairs(Target_Treatment, by="Target")
+pairs(Target_Treatment, by="Treatment")
+
+
+#Lastly, look at removal based on all three factors
+#Most accurate comparison due to interactions between the three. 
+Final <- emtrends(mod,c("Treatment","Size","Target"), var = "Time.days")
+Final
+
+Final.Slopes <- as.data.frame(Final) %>% 
+  mutate(HPD.12.5 = ci(Final, method="HDI", ci=0.75)$CI_low,
+         HPD.87.5 = ci(Final, method="HDI", ci=0.75)$CI_high) %>% 
+  mutate(across(4:8,~.x*-1))
+
+
+#Pairwise Comparisons for D)
+pairs(Final, by=c("Size","Target"))
+
+#write.csv(Final.Slopes, file=paste0(files.dir,"/MesosRemovalMODEL.csv"), row.names=F)
+
+```
+
+
+Now, we perform our analyses for the ancillary data.
+
+```{r Step 3}
+#Temperature
+temp.anova <- lmer(temp.C ~ Time * Treatment + (1|Meso.Num), data = Mesos.small)
+summary(temp.anova)
+shapiro.test(resid(temp.anova)) #p = 0.108, barely normal
+leveneTest(resid(temp.anova) ~ Mesos.small$Treatment * Mesos.small$Time) #p = 0.98, homogeneous
+pairs(emmeans(temp.anova, c("Time"))) # Diel swing in temperature
+
+pairs(emmeans(temp.anova, c("Treatment"))) # No difference between treatments
+
+#pH
+pH.anova <- lmer(pH ~ Time * Treatment + (1|Meso.Num), data = Mesos.small)
+summary(pH.anova)
+shapiro.test(resid(pH.anova)) #p = 0.43
+leveneTest(resid(pH.anova) ~ Mesos.small$Treatment * Mesos.small$Time) #p = 0.18
+pairs(emmeans(pH.anova, c("Time"))) # slight increases in pH from T1-T4
+pairs(emmeans(pH.anova, c("Treatment"))) # Some treatment differences, but that's to be expected. Magnitude of difference never exceeds ~0.2 pH.
+
+#Turbidity
+turb.anova <- aov(turbidity.NTU ~ Treatment, data = Mesos.small)
+summary(turb.anova)
+TukeyHSD(turb.anova) #signif. higher for DOC mesocosms
+
+#DOC
+DOC.anova <- aov(doc.mg.L ~ Treatment, data = Mesos.mid)
+summary(DOC.anova)
+TukeyHSD(DOC.anova) #signif. higher for DOC mesocosms
+
+#NH4
+NH4.anova <- aov(NH4.ugN.L ~ Treatment, data = Mesos.mid)
+summary(NH4.anova)
+TukeyHSD(NH4.anova) #signif. higher for DOC mesocosms
+
+#NO3
+NO3.anova <- aov(NO3.ugN.L ~ Treatment, data = Mesos.mid)
+summary(NO3.anova)
+TukeyHSD(NO3.anova) #BFH signif. lower then control
+
+#SRP
+SRP.anova <- aov(SRP.ugP.L ~ Treatment, data = Mesos.mid)
+summary(SRP.anova)
+TukeyHSD(SRP.anova) #signif. higher for DOC mesocosms
+
+
+#Now do a correlation matrix with K
+df.corr<- inner_join(Mesos.tiny, X, by=c("Meso.Num"))
+df.corr$K <- -1*df.corr$K
+correlation <- rcorr(as.matrix(df.corr[c(7:14,18)], type="pearson"))
+correlation
+
+
+```
+
+# 3. Figures
+
+Now, we plot the figures presented in the manuscript, excluding Figure 1, which does not present graphical data and was created in power-point.
+
+```{r Step 4, echo=T, warning=F}
+
+# Fig. 4 : Alternaive
+library(tidybayes)
+
+## Panel A
+
+headernames <- c(
+  `CARP` = "Carp",
+  `STHD` = "Steelhead",
+  `1.2` = "1.2 μm",
+  `0.4` ="0.4 μm"
+)
+
+boxlabels <- c(str_wrap("No Lvs",6),
+               str_wrap("DOC",15),
+               str_wrap("Low Lvs",6),
+               str_wrap("High Lvs",6),
+               str_wrap("Low Lvs +BF",6),
+               str_wrap("High Lvs +BF",6))
+
+#Set Orders again
+Treatment.Slopes$Treatment = factor(Treatment.Slopes$Treatment, levels=c("ETO", "DOC","NCL","NCH","BFL","BFH"))
+
+PanelA <- ggplot(Treatment.Slopes %>% mutate(prim="one"), aes(x=Time.days.trend,y=Treatment, color=interaction(Treatment, prim), fill=interaction(Treatment, prim))) +
+  geom_errorbar(aes(xmin=HPD.12.5, xmax=HPD.87.5, color=Treatment), 
+                width=0, height=0, size=4) +
+  geom_errorbar(aes(xmin=lower.HPD, xmax=upper.HPD, color=Treatment), 
+                width=0, height=0, size=2) +
+  geom_point(size=6, pch=21, color="black") +
+  scale_color_manual(values=p12)+
+  scale_fill_manual(values=p12)+
+  custom_theme +
+  xlab(expression(Removal~rate~(day^"-1")))+
+  scale_x_continuous(limits=c(0,5.5))+
+  scale_y_discrete(labels=boxlabels)
+PanelA
+
+#Hmm, lets try something funky
+Final.Slopes %<>% mutate(prim="two")
+Full <- PanelA +
+  #Size 1.2, Carp
+  geom_errorbar(data=Final.Slopes %>% subset(Size == 1.2 & Target == "CARP"),
+                aes(xmin=HPD.12.5, xmax=HPD.87.5, color=interaction(Treatment, prim)), 
+                width=0, height=0, size=2, position=position_nudge(y=-0.2)
+                ) +
+  geom_errorbar(data=Final.Slopes %>% subset(Size == 1.2 & Target == "CARP"),
+                aes(xmin=lower.HPD, xmax=upper.HPD, color=interaction(Treatment, prim)), 
+                width=0, height=0, size=1, position=position_nudge(y=-0.2)
+                ) +
+  geom_point(data=Final.Slopes %>% subset(Size == 1.2 & Target == "CARP"), 
+             size=3.5, pch=21, color="black", position=position_nudge(y=-0.2),
+             inherit.aes = T
+             ) +
+  #Size 1.2, Steelhead
+  geom_errorbar(data=Final.Slopes %>% subset(Size == 1.2 & Target == "STHD"),
+                aes(xmin=HPD.12.5, xmax=HPD.87.5, color=interaction(Treatment, prim)), 
+                width=0, height=0, size=2, position=position_nudge(y=-0.3)
+                ) +
+  geom_errorbar(data=Final.Slopes %>% subset(Size == 1.2 & Target == "STHD"),
+                aes(xmin=lower.HPD, xmax=upper.HPD, color=interaction(Treatment, prim)), 
+                width=0, height=0, size=1, position=position_nudge(y=-0.3)
+                ) +
+  geom_point(data=Final.Slopes %>% subset(Size == 1.2 & Target == "STHD"), 
+             size=3.5, pch=21, color="black", position=position_nudge(y=-0.3),
+             inherit.aes = T
+             ) +
+  #Size 0.4, Carp
+  geom_errorbar(data=Final.Slopes %>% subset(Size == 0.4 & Target == "CARP"),
+                aes(xmin=HPD.12.5, xmax=HPD.87.5, color=interaction(Treatment, prim)), 
+                width=0, height=0, size=2, position=position_nudge(y=-0.45)
+                ) +
+  geom_errorbar(data=Final.Slopes %>% subset(Size == 0.4 & Target == "CARP"),
+                aes(xmin=lower.HPD, xmax=upper.HPD, color=interaction(Treatment, prim)), 
+                width=0, height=0, size=1, position=position_nudge(y=-0.45)
+                ) +
+  geom_point(data=Final.Slopes %>% subset(Size == 0.4 & Target == "CARP"), 
+             size=3.5, pch=21, color="black", position=position_nudge(y=-0.45),
+             inherit.aes = T
+             ) +
+  #Size 0.4, Steelhead
+  geom_errorbar(data=Final.Slopes %>% subset(Size == 0.4 & Target == "STHD"),
+                aes(xmin=HPD.12.5, xmax=HPD.87.5, color=interaction(Treatment, prim)), 
+                width=0, height=0, size=2, position=position_nudge(y=-0.55)
+                ) +
+  geom_errorbar(data=Final.Slopes %>% subset(Size == 0.4 & Target == "STHD"),
+                aes(xmin=lower.HPD, xmax=upper.HPD, color=interaction(Treatment, prim)), 
+                width=0, height=0, size=1, position=position_nudge(y=-0.55)
+                ) +
+  geom_point(data=Final.Slopes %>% subset(Size == 0.4 & Target == "STHD"), 
+             size=3.5, pch=21, color="black", position=position_nudge(y=-0.55),
+             inherit.aes = T
+             )
+
+Full
+
+```
+
+# 4. Supplementary Materials
+
+Here we reproduce the materials provided in "Supplementary_Figures&Tables.pdf"
+
+```{r Supplementary}
+
+#Figure S0
+headernames <- c(
+  `CARP` = "Carp",
+  `STHD` = "Steelhead",
+  `ETO` = str_wrap("No Leaves",15),
+  `DOC` = str_wrap("Dissolved Organic Carbon",15),
+  `NCH` = str_wrap("High Leaves",15),
+  `NCL` = str_wrap("Low Leaves",15),
+  `BFH` = str_wrap("High Leaves + Biofilm",15),
+  `BFL` = str_wrap("Low Leaves + Biofilm",15)
+)
+
+Prop_plot <- ggplot(Mesos.prop %>% subset(prop!=1 & prop!=0), aes(Time.hr, prop, fill=interaction(Size, Target, sep = ":" ))) +
+  geom_smooth(aes(group=Size, color=interaction(Size, Target, sep = ":" )), 
+                method='lm', linetype="solid", size=1)+
+  geom_point(size=3, shape=21, color="black", stroke=0.25)+
+  scale_fill_manual(values=c("#009AD0","#B7ECFF","#BD62CC","#E8CDE9"), 
+                    labels=c('0.4 μm', '1.2 μm', '0.4 μm', '1.2 μm'))+
+  scale_color_manual(values=c("#009AD0","#B7ECFF","#BD62CC","#E8CDE9"), 
+                    labels=c('0.4 μm', '1.2 μm', '0.4 μm', '1.2 μm'))+
+  theme_bw()+theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+  ylab(expression(Proportion~of~eDNA~Gene~Copies~Mesocosm^"-1"))+
+  xlab(expression(Time~(hr)))+
+  theme(axis.text.y=element_text(size=11,color="black"))+
+  theme(axis.text.x=element_text(size=11,color="black"))+
+  theme(axis.title.x=element_text(size=11,color="black"))+
+  theme(axis.title.y=element_text(size=11,color="black"))+
+  theme(legend.position="right")+
+  facet_grid(Target~Treatment, labeller=as_labeller(headernames))+
+  theme(strip.text.x = element_text(size=11),
+        strip.text.y = element_text(size=11),
+        panel.spacing = unit(0.7, "lines"))+
+  labs(fill = "Legend")+
+  labs(color = "Legend")
+Prop_plot <- facetColor(Prop_plot, c(p7.5,"#B7ECFF","#E8CDE9"))
+  
+ggsave(paste0(plots.dir,"/FigS0.png"), Prop_plot, width = 14, height =7.5, units = c("in"))
+
+knitr::include_graphics(paste0(plots.dir,"/FigS0.png"))
+
+#Figure S1
+#Coerce
+Rel$Bucket <- as.factor(Rel$Bucket)
+Rel$Size <- as.factor(Rel$Size)
+Rel$Target <- as.factor(Rel$Target)
+
+#Average
+Rel <- Rel %>% group_by(Bucket, Target, Size) %>% 
+  dplyr::summarise(GC.mL = mean(GC.mL))
+
+#Plot
+headernames <- c(
+  `CARP` = "Carp",
+  `STHD` = "Steelhead",
+  `BKT1` = "Row 1",
+  `BKT2` = "Row 2",
+  `BKT3` = "Row 3",
+  `BKT4` = "Row 4"
+)
+
+BKTA <- ggplot(Rel, aes(x=Bucket, y=GC.mL, fill=interaction(Size, Target, ":"))) + 
+  geom_bar(stat = "identity", position = "stack", color="black")+
+  scale_fill_manual(values=c("#009AD0","#B7ECFF","#BD62CC","#E8CDE9"), labels =c('0.4 μm', '1.2 μm', '0.4 μm', '1.2 μm'))+
+  theme_bw()+theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+  ylab(expression(Gene~Copies~mL^"-1"))+
+  scale_y_continuous(position = "left")+
+  xlab(expression(Bucket))+
+  theme(axis.text.y=element_text(size=10,color="black"))+
+  theme(axis.text.x=element_text(size=10,color="black"))+
+  theme(axis.title.x=element_text(size=14,color="black"))+
+  theme(axis.title.y=element_text(size=14,color="black"))+
+  theme(strip.background =element_rect(fill="white"))+
+  theme(strip.text.x = element_text(size=14),
+        strip.text.y = element_text(size=14))+
+  theme(legend.position="none")+
+  facet_wrap(~Target, labeller = as_labeller(headernames))+
+  scale_x_discrete(labels = headernames)
+BKTA <- facetColor(BKTA, c("#B7ECFF","#E8CDE9"))
+
+#Now calculate proportions
+Rel.Prop <- Rel %>% 
+  group_by(Bucket, Target) %>% 
+  dplyr::summarise(n = sum(GC.mL)) 
+Rel.Prop <- inner_join(Rel, Rel.Prop, by=c("Bucket", "Target"))
+Rel.Prop <- Rel.Prop %>% mutate(prop = GC.mL / n)
+
+#plot
+BKTB <- ggplot(Rel.Prop, aes(x=Bucket, y=prop, fill=interaction(Size, Target, ":"))) + 
+  geom_bar(stat = "identity", position = "stack", color="black")+
+  scale_fill_manual(values=c("#009AD0","#B7ECFF","#BD62CC","#E8CDE9"), labels =c('0.4 μm', '1.2 μm', '0.4 μm', '1.2 μm'))+
+  theme_bw()+theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+  ylab(expression(Proportion~of~Gene~Copies~mL^"-1"))+
+  scale_y_continuous(position = "left")+
+  xlab(expression(Bucket))+
+  theme(axis.text.y=element_text(size=10,color="black"))+
+  theme(axis.text.x=element_text(size=10,color="black"))+
+  theme(axis.title.x=element_text(size=14,color="black"))+
+  theme(axis.title.y=element_text(size=14,color="black"))+
+  theme(strip.background =element_rect(fill="white"))+
+  theme(strip.text.x = element_text(size=14),
+        strip.text.y = element_text(size=14))+
+  facet_wrap(~Target, labeller = as_labeller(headernames))+
+  labs(fill = "Legend")+
+  scale_x_discrete(labels = headernames)
+BKTB <- facetColor(BKTB, c("#B7ECFF","#E8CDE9"))
+
+BKTplot <- wrap_elements(BKTA) + wrap_elements(BKTB)
+
+ggsave(paste0(plots.dir,"/FigS1.png"), BKTplot, width = 12, height = 8, units = c("in"))
+
+knitr::include_graphics(paste0(plots.dir,"/FigS1.png"))
+
+
+# Figure S2
+resid_panel(mixed.mod, plots="all")
+ggsave(paste0(plots.dir,"/FigS2.png"), resid_panel(mixed.mod, plots="all"), width = 8, height =6, units = c("in"))
+
+# Figure S3 + S4
+
+# Plot
+headernames <- c(
+  `CARP` = "Carp",
+  `STHD` = "Steelhead",
+  `ETO` = str_wrap("No Leaves",15),
+  `DOC` = str_wrap("Dissolved Organic Carbon",15),
+  `NCH` = str_wrap("High Leaves",15),
+  `NCL` = str_wrap("Low Leaves",15),
+  `BFH` = str_wrap("High Leaves + Biofilm",15),
+  `BFL` = str_wrap("Low Leaves + Biofilm",15),
+  `1` = "Mesocosm 1",
+  `2` = "Mesocosm 2",
+  `3` = "Mesocosm 3",
+  `4` = "Mesocosm 4"
+)
+
+Fit.plot.Carp <- ggplot(fit %>% subset(Target == "CARP"), aes(x=Time.hr, y=LNGc.meso, fill=interaction(Treatment,Size)))+
+  geom_point(size=5, shape=21, stroke=0.75)+
+  geom_line(aes(x = Time.hr, y = Conditional_Prediction, color=Size, linetype="dashed"))+
+  theme_bw()+theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+  scale_fill_manual(values=p9.5)+
+  scale_color_manual(values=c("black","black"))+
+  scale_linetype_manual(values=c("solid","dashed"))+
+  ylab(expression(ln(eDNA~Gene~Copies~mesocosm^"-1")))+
+  xlab(expression(Time~(hours)))+
+  theme(axis.text.y=element_text(size=14,color="black"))+
+  theme(axis.text.x=element_text(size=14,color="black"))+
+  theme(axis.title.x=element_text(size=16,color="black"))+
+  theme(axis.title.y=element_text(size=16,color="black"))+
+  theme(legend.position="none")+
+  scale_y_continuous(expand=c(0,0),limits=c(6,16), position = "right")+
+  ###These lines facet the graph
+  facet_grid(Treatment~Row, switch="y", labeller = as_labeller(headernames))+
+  theme(strip.text.x = element_text(size=16),
+        strip.text.y = element_text(size=16))+
+  theme(strip.background =element_rect(fill="white"))+
+  theme(panel.spacing = unit(1, "lines"))
+#Add colors to facet grid
+g <- facetColor(Fit.plot.Carp,c("#B7ECFF","#B7ECFF","#B7ECFF","#B7ECFF",p7))
+ggsave(filename=paste0(plots.dir,"/FigS3.png"), g, width = 14, height = 12, units = c("in"))
+
+knitr::include_graphics(paste0(plots.dir,"/FigS3.png"))
+
+
+Fit.plot.Sthd <- ggplot(fit %>% subset(Target == "STHD"), aes(x=Time.hr, y=LNGc.meso, fill=interaction(Treatment,Size)))+
+  geom_point(size=5, shape=21, stroke=0.75)+
+  geom_line(aes(x = Time.hr, y = Conditional_Prediction, color=Size, linetype="dashed"))+
+  theme_bw()+theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+  scale_fill_manual(values=p9.5)+
+  scale_color_manual(values=c("black","black"))+
+  scale_linetype_manual(values=c("solid","dashed"))+
+  ylab(expression(ln(eDNA~Gene~Copies~mesocosm^"-1")))+
+  xlab(expression(Time~(hours)))+
+  theme(axis.text.y=element_text(size=14,color="black"))+
+  theme(axis.text.x=element_text(size=14,color="black"))+
+  theme(axis.title.x=element_text(size=16,color="black"))+
+  theme(axis.title.y=element_text(size=16,color="black"))+
+  theme(legend.position="none")+
+  scale_y_continuous(expand=c(0,0),limits=c(6,16), position = "right")+
+  ###These lines facet the graph
+  facet_grid(Treatment~Row, switch="y", labeller = as_labeller(headernames))+
+  theme(strip.text.x = element_text(size=16),
+        strip.text.y = element_text(size=16))+
+  theme(strip.background =element_rect(fill="white"))+
+  theme(panel.spacing = unit(1, "lines"))
+#Add colors to facet grid
+g <- facetColor(Fit.plot.Sthd, c("#E8CDE9","#E8CDE9","#E8CDE9","#E8CDE9",p7))
+ggsave(filename=paste0(plots.dir,"/FigS4.png"), g, width = 14, height = 12, units = c("in"))
+
+knitr::include_graphics(paste0(plots.dir,"/FigS4.png"))
+
+# Fig. S5 : Metabolism
+
+Water.ER <- Mesos.tiny %>% ggplot(aes(x=Treatment, y=-Water.ER.mg.hr.L, fill=Treatment)) + 
+  geom_boxplot(color="black", stroke=0.75) +
+  scale_fill_manual(values = p5, guide="none") + 
+  theme_bw()+theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+  ylab(expression(Water~Column~Respiration~(mg~O2~L^-1~hr^-1)))+
+  xlab(expression(Treatment))+
+  scale_y_continuous(limits = c(0,0.5))+
+  scale_x_discrete(labels = (boxlabels))+
+  geom_signif(comparisons = list(c("ETO","ETO"),c("DOC","DOC"),c("NCL","BFH")),
+              map_signif_level = FALSE, 
+              textsize = 4, 
+              annotations = c("a","b","a"),
+              y_position = c(0.08,0.46,0.2),
+              tip_length = 0.04
+  )
+
+Leaf.ER <- Mesos.tiny %>% ggplot(aes(x=Treatment, y=-Leaf.ER.mg.hr.m2, fill=Treatment)) + 
+  geom_boxplot(color="black") +
+  scale_fill_manual(values = p5[3:10], guide="none") + 
+  theme_bw()+theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+  ylab(expression(Leaf~Litter~Respiration~(mg~O2~m^-2~hr^-1)))+
+  xlab(expression(Treatment))+
+  scale_y_continuous(limits = c(0,21))+
+  scale_x_discrete(labels = (boxlabels))+
+  geom_signif(comparisons = list(c("NCL","BFH")),
+              map_signif_level = FALSE, 
+              textsize = 4, 
+              annotations = c("NS"),
+              y_position = c(18.5),
+              tip_length = 0.04
+  )
+
+Mesos.ER <- Mesos.tiny %>% ggplot(aes(x=Treatment, y=-Mesocosm.ER.mg.hr, fill=Treatment)) + 
+  geom_boxplot(color="black") +
+  scale_fill_manual(values = p5, guide="none") + 
+  theme_bw()+theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+  ylab(expression(Mesocosm~Respiration~(mg~O2~hr^-1)))+
+  xlab(expression(Treatment))+
+  scale_y_continuous(limits = c(0,12))+
+  scale_x_discrete(labels = (boxlabels))+
+  geom_signif(comparisons = list(c("ETO","ETO"),c("DOC","DOC"),c("NCL","NCL"),c("NCH","NCH"),c("BFL","BFL"),c("BFH","BFH")),
+              map_signif_level = FALSE,
+              textsize = 4,
+              annotations = c("a","c","abc","bc","ab","abc"),
+              y_position = c(1.5,11,4.2,8.2,3.4,4.5),
+              tip_length = 0.02
+  )
+
+ER.Full <- Water.ER + Leaf.ER + Mesos.ER
+
+ggsave(paste0(plots.dir,"/FigS5.png"), ER.Full, width=10, height = 5.5, units=c("in"))
+
+knitr::include_graphics(paste0(plots.dir,"/FigS5.png"))
+
+```
