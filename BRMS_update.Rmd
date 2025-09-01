@@ -530,8 +530,8 @@ mixed.mod <- lmer(LNGc.meso ~ Time.days:Treatment*Size*Target +
 MixedResids <- resid_panel(mixed.mod, plots = "all")
 MixedResids
 #Response vs. Predicted is strong, and QQ plot looks fine. 
-#Roughly normal distribution of residuals, although low outliers exist
-shapiro.test(resid(mixed.mod)) # Shapiro test confirms this
+shapiro.test(resid(mixed.mod)) # Shapiro test suggest residuals are non-normal, though
+#Doesn't seem to be too asymmetric, at least
 
 #Model Summary
 summary(mixed.mod)
@@ -650,125 +650,57 @@ library(bayestestR)
 
 #Mixed-effect/hierarchical model, b.c. of repeated measures within mesocosms
 
-mod <- brm(formula = LNGc.meso ~ Time.days:Treatment*Size*Target + 
-                     (1 + Time.days|Meso.Num),
-           data = Mesos,
-           family = gaussian(),
-           prior = c(set_prior("normal(0,10)", class = "b")
-                     ),
-           warmup = 1000, iter = 2000, chains = 8, cores=8,
-           control = list(adapt_delta = 0.8), 
-           
-           )
+# k_mod <- brm(formula = LNGc.meso ~ Time.days:Treatment*Size*Target + 
+#                      (1 + Time.days|Meso.Num),
+#            data = Mesos,
+#            family = gaussian(),
+#            prior = c(set_prior("normal(0,10)", class = "b")
+#                      ),
+#            warmup = 1000, iter = 2000, chains = 8, cores=8,
+#            control = list(adapt_delta = 0.8), 
+#            
+#            )
 
 #Converges very quickly.
-#Compare fixed effects between two approaches
 
-x<-fixef(mixed.mod) %>% as.numeric 
-y<-fixef(mod)[,c(T,F,F,F)] %>% as.numeric
+#Save model fit
+#save(k_mod, file=paste0(this.dir, "/Model Fits/k.RData"))
 
-#Values are identical 
-plot(x,y) ; abline(a=0,b=1)
+load(paste0(this.dir, "/Model Fits/k.RData"))
 
 #Cool, now check model 
-summary(mod)
+summary(k_mod)
 #Rhat = 1 for all params, ESS is very high.
-#Simple linear model with a good amount of datapoints, so unsurprising 
+
 
 #Now, we apply emmeans as before. 
-
 #Export coefficients from the fixed portion of model
 
 # Append model fit to dataframe
 fit <- Mesos
-fit$resids <- resid(mod)[,c(T,F,F,F)] %>% as.numeric
+fit$resids <- resid(k_mod)[,c(T,F,F,F)] %>% as.numeric
 fit <- fit %>% mutate(Conditional_Prediction = LNGc.meso - resids)
-fit$Marginal_Prediction = predict(mod, re.form=NA)[,c(T,F,F,F)] %>% as.numeric
+fit$Marginal_Prediction = predict(k_mod, re.form=NA)[,c(T,F,F,F)] %>% as.numeric
 
 #The emtrends() function uses a difference quotient to estimate 
 #the slope of a line fitted to a given variable.
 # We apply emtrends to estimate the slope of "LN.Gc" according to the numerical covariate "Time.days"
 # This gives us an estimate of removal (in /day) according to our categorical predictors (Treatment, eDNA particle size, and Target organism)
 
-Treatment.em <- emtrends(mod,"Treatment", var = "Time.days") 
-Size.em <- emtrends(mod,"Size", var = "Time.days") 
-Target.em <- emtrends(mod,"Target", var = "Time.days")
-#Interactions are significant here, so be careful interpreting these results.
-#In the text, we present these results simultaneously with the results from the
-# full model, so as not to misrepresent the complexity of the interactions. 
-
-#Save removal estimates for barplots
-Treatment.Slopes <- as.data.frame(Treatment.em) %>% 
-  mutate(HPD.12.5 = ci(Treatment.em, method="HDI", ci=0.75)$CI_low,
-         HPD.87.5 = ci(Treatment.em, method="HDI", ci=0.75)$CI_high) %>% 
-  mutate(across(2:6,~.x*-1)) #set removal to positive units, by convention
-Size.Slopes <- as.data.frame(Size.em) %>% 
-  mutate(HPD.12.5 = ci(Size.em, method="HDI", ci=0.75)$CI_low,
-         HPD.87.5 = ci(Size.em, method="HDI", ci=0.75)$CI_high) %>% 
-  mutate(across(2:6,~.x*-1))
-Target.Slopes <- as.data.frame(Target.em) %>% 
-  mutate(HPD.12.5 = ci(Target.em, method="HDI", ci=0.75)$CI_low,
-         HPD.87.5 = ci(Target.em, method="HDI", ci=0.75)$CI_high) %>% 
-  mutate(across(2:6,~.x*-1))
-
-#Pairwise comparisons (no stats here)
-pairs(Treatment.em)
-Treatment_pairwise <- pairs(Treatment.em) %>% as.data.frame()
-
-pairs(Size.em)
-Size_pairwise <- pairs(Size.em) %>% as.data.frame()
-
-pairs(Target.em)
-Target_pairwise <- pairs(Target.em) %>% as.data.frame()
-
-#Separate by treatment and size
-Treatment_Size <- emtrends(mod, c("Treatment","Size"), var = "Time.days")
-Treatment_Size
-
-pairs(Treatment_Size, by="Size")
-pairs(Treatment_Size, by="Treatment")
-
-Treatment_Size.Slopes <- as.data.frame(Treatment_Size) %>% 
-  mutate(HPD.12.5 = ci(Treatment_Size, method="HDI", ci=0.75)$CI_low,
-         HPD.87.5 = ci(Treatment_Size, method="HDI", ci=0.75)$CI_high) %>% 
-  mutate(across(3:7,~.x*-1))
-
-#Separate by size and target
-Target_Size <- emtrends(mod, c("Target", "Size"), var = "Time.days")
-Target_Size
-pairs(Target_Size)
-
-Target_Size.Slopes <- as.data.frame(Target_Size) %>% 
-  mutate(HPD.12.5 = ci(Target_Size, method="HDI", ci=0.75)$CI_low,
-         HPD.87.5 = ci(Target_Size, method="HDI", ci=0.75)$CI_high) %>% 
-  mutate(across(3:7,~.x*-1))
-
-#Separate by target and treatment
-Target_Treatment <- emtrends(mod, c("Target", "Treatment"), var = "Time.days")
-Target_Treatment.Slopes <- as.data.frame(Target_Treatment) %>% 
-  mutate(HPD.12.5 = ci(Target_Treatment, method="HDI", ci=0.75)$CI_low,
-         HPD.87.5 = ci(Target_Treatment, method="HDI", ci=0.75)$CI_high) %>% 
-  mutate(across(3:7,~.x*-1))
-
-pairs(Target_Treatment, by="Target")
-pairs(Target_Treatment, by="Treatment")
-
-
-#Lastly, look at removal based on all three factors
 #Most accurate comparison due to interactions between the three. 
-Final <- emtrends(mod,c("Treatment","Size","Target"), var = "Time.days")
-Final
+k_trends <- emtrends(k_mod,c("Treatment","Size","Target"), var = "Time.days")
 
-Final.Slopes <- as.data.frame(Final) %>% 
-  mutate(HPD.12.5 = ci(Final, method="HDI", ci=0.75)$CI_low,
-         HPD.87.5 = ci(Final, method="HDI", ci=0.75)$CI_high) %>% 
-  mutate(across(4:8,~.x*-1))
+#Export as a table with quantiles
+k_table <- as.data.frame(k_trends) %>% 
+  mutate(HPD.12.5 = ci(k_trends, method="HDI", ci=0.75)$CI_low,
+         HPD.87.5 = ci(k_trends, method="HDI", ci=0.75)$CI_high) %>% 
+  mutate(across(4:8,~.x*-1)) #Change k to be positive
+k_table
+write.csv(k_table, file=paste0(files.dir,"/MesosRemovalMODEL.csv"), row.names=F)
 
-
-#Pairwise Comparisons for D)
-pairs(Final, by=c("Size","Target"))
-
-#write.csv(Final.Slopes, file=paste0(files.dir,"/MesosRemovalMODEL.csv"), row.names=F)
+#Pairwise Comparisons (correction applied by default)
+k_pairs <- pairs(k_trends, by=c("Size","Target")) %>% as.data.frame()
+write.csv(k_pairs, file=paste0(files.dir,"/MesosRemovalPAIRS.csv"), row.names=F)
 
 ```
 
@@ -824,8 +756,6 @@ df.corr<- inner_join(Mesos.tiny, X, by=c("Meso.Num"))
 df.corr$K <- -1*df.corr$K
 correlation <- rcorr(as.matrix(df.corr[c(7:14,18)], type="pearson"))
 correlation
-
-
 ```
 
 # 3. Figures
@@ -834,109 +764,12 @@ Now, we plot the figures presented in the manuscript, excluding Figure 1, which 
 
 ```{r Step 4, echo=T, warning=F}
 
-# Fig. 4 : Alternaive
+# Fig. 4 : Alternative
+
 library(tidybayes)
+post <- gather_emmeans_draws(k_trends) %>% as.data.frame()
+post$Treatment <- factor(post$Treatment, levels=c("NCL","NCH","DOC","BFL","BFH","ETO"))
 
-## Panel A
-
-headernames <- c(
-  `CARP` = "Carp",
-  `STHD` = "Steelhead",
-  `1.2` = "1.2 μm",
-  `0.4` ="0.4 μm"
-)
-
-boxlabels <- c(str_wrap("No Lvs",6),
-               str_wrap("DOC",15),
-               str_wrap("Low Lvs",6),
-               str_wrap("High Lvs",6),
-               str_wrap("Low Lvs +BF",6),
-               str_wrap("High Lvs +BF",6))
-
-#Set Orders again
-Treatment.Slopes$Treatment = factor(Treatment.Slopes$Treatment, levels=c("ETO", "DOC","NCL","NCH","BFL","BFH"))
-
-PanelA <- ggplot(Treatment.Slopes %>% mutate(prim="one"), aes(x=Time.days.trend,y=Treatment, color=interaction(Treatment, prim), fill=interaction(Treatment, prim))) +
-  geom_errorbar(aes(xmin=HPD.12.5, xmax=HPD.87.5, color=Treatment), 
-                width=0, height=0, size=4) +
-  geom_errorbar(aes(xmin=lower.HPD, xmax=upper.HPD, color=Treatment), 
-                width=0, height=0, size=2) +
-  geom_point(size=6, pch=21, color="black") +
-  scale_color_manual(values=p12)+
-  scale_fill_manual(values=p12)+
-  custom_theme +
-  xlab(expression(Removal~rate~(day^"-1")))+
-  scale_x_continuous(limits=c(0,5.5))+
-  scale_y_discrete(labels=boxlabels)
-PanelA
-
-#Hmm, lets try something funky
-Final.Slopes %<>% mutate(prim="two")
-Full <- PanelA +
-  #Size 1.2, Carp
-  geom_errorbar(data=Final.Slopes %>% subset(Size == 1.2 & Target == "CARP"),
-                aes(xmin=HPD.12.5, xmax=HPD.87.5, color=interaction(Treatment, prim)), 
-                width=0, height=0, size=2, position=position_nudge(y=-0.2)
-                ) +
-  geom_errorbar(data=Final.Slopes %>% subset(Size == 1.2 & Target == "CARP"),
-                aes(xmin=lower.HPD, xmax=upper.HPD, color=interaction(Treatment, prim)), 
-                width=0, height=0, size=1, position=position_nudge(y=-0.2)
-                ) +
-  geom_point(data=Final.Slopes %>% subset(Size == 1.2 & Target == "CARP"), 
-             size=3.5, pch=21, color="black", position=position_nudge(y=-0.2),
-             inherit.aes = T
-             ) +
-  #Size 1.2, Steelhead
-  geom_errorbar(data=Final.Slopes %>% subset(Size == 1.2 & Target == "STHD"),
-                aes(xmin=HPD.12.5, xmax=HPD.87.5, color=interaction(Treatment, prim)), 
-                width=0, height=0, size=2, position=position_nudge(y=-0.3)
-                ) +
-  geom_errorbar(data=Final.Slopes %>% subset(Size == 1.2 & Target == "STHD"),
-                aes(xmin=lower.HPD, xmax=upper.HPD, color=interaction(Treatment, prim)), 
-                width=0, height=0, size=1, position=position_nudge(y=-0.3)
-                ) +
-  geom_point(data=Final.Slopes %>% subset(Size == 1.2 & Target == "STHD"), 
-             size=3.5, pch=21, color="black", position=position_nudge(y=-0.3),
-             inherit.aes = T
-             ) +
-  #Size 0.4, Carp
-  geom_errorbar(data=Final.Slopes %>% subset(Size == 0.4 & Target == "CARP"),
-                aes(xmin=HPD.12.5, xmax=HPD.87.5, color=interaction(Treatment, prim)), 
-                width=0, height=0, size=2, position=position_nudge(y=-0.45)
-                ) +
-  geom_errorbar(data=Final.Slopes %>% subset(Size == 0.4 & Target == "CARP"),
-                aes(xmin=lower.HPD, xmax=upper.HPD, color=interaction(Treatment, prim)), 
-                width=0, height=0, size=1, position=position_nudge(y=-0.45)
-                ) +
-  geom_point(data=Final.Slopes %>% subset(Size == 0.4 & Target == "CARP"), 
-             size=3.5, pch=21, color="black", position=position_nudge(y=-0.45),
-             inherit.aes = T
-             ) +
-  #Size 0.4, Steelhead
-  geom_errorbar(data=Final.Slopes %>% subset(Size == 0.4 & Target == "STHD"),
-                aes(xmin=HPD.12.5, xmax=HPD.87.5, color=interaction(Treatment, prim)), 
-                width=0, height=0, size=2, position=position_nudge(y=-0.55)
-                ) +
-  geom_errorbar(data=Final.Slopes %>% subset(Size == 0.4 & Target == "STHD"),
-                aes(xmin=lower.HPD, xmax=upper.HPD, color=interaction(Treatment, prim)), 
-                width=0, height=0, size=1, position=position_nudge(y=-0.55)
-                ) +
-  geom_point(data=Final.Slopes %>% subset(Size == 0.4 & Target == "STHD"), 
-             size=3.5, pch=21, color="black", position=position_nudge(y=-0.55),
-             inherit.aes = T
-             )
-
-Full
-
-```
-
-# 4. Supplementary Materials
-
-Here we reproduce the materials provided in "Supplementary_Figures&Tables.pdf"
-
-```{r Supplementary}
-
-#Figure S0
 headernames <- c(
   `CARP` = "Carp",
   `STHD` = "Steelhead",
@@ -947,6 +780,92 @@ headernames <- c(
   `BFH` = str_wrap("High Leaves + Biofilm",15),
   `BFL` = str_wrap("Low Leaves + Biofilm",15)
 )
+
+Full <- ggplot(post, aes(x = Target, y = (-1*.value), color=interaction(Treatment,Size))) +
+  stat_pointinterval(aes(fill=interaction(Target, Size)), .width = c(0.75, 0.95), 
+                     position = position_dodge(0.75)) +
+  theme_classic()+
+  coord_flip()+
+  scale_x_discrete(labels=c("Carp", "Steelhead"))+
+  facet_wrap(~ Treatment, scales = "free_y", ncol = 3, labeller=as_labeller(headernames)) +
+  labs(
+    x = "eDNA Source",
+    y = "Removal (/day)"
+  )+
+  scale_color_manual(values=c(p8, p8.5))+
+  theme(legend.position = "none") 
+Full
+
+```
+
+# 3.5 Modified analysis for estimating V_dep instead
+
+```{r Vdep}
+
+library(brms)
+library(bayestestR)
+
+#Mixed-effect/hierarchical model, b.c. of repeated measures within mesocosms
+# Assuming k (1/day), Q (m^3/s), v (m/s) and w, h (m), Vdep (mm/s) = (kQ)/(w*(v*24*60*60)) 
+# = (k*w*h*v) / (w*v*24*60*60) = k*h / 86400
+
+# Vdep_mod <- brm(formula = (LNGc.meso*depth.m) ~ 0 + Time.days:Treatment*Size*Target + 
+#                      (1 + Time.days||Meso.Num),
+#            data = Mesos,
+#            family=gaussian(),
+#            iter=100000,
+#            cores=16,
+#            control=list(adapt_delta = 0.99)
+#            )
+
+#save(Vdep_mod, file=paste0(this.dir, "/Model Fits/vdep.RData"))
+
+load(paste0(this.dir, "/Model Fits/vdep.RData"))
+
+summary(Vdep_mod)
+ranef(Vdep_mod)
+
+#We divide by 24*60*60 to get the proper units for time (seconds)
+#We multiply by 1000 to get proper units for distance (mm)
+# This leaves us with Vdep in mm/s
+
+Vdep <- emtrends(Vdep_mod,c("Treatment","Size","Target"), var = "Time.days")
+Vdep_post <- gather_emmeans_draws(Vdep) %>% as.data.frame()
+Vdep_post$Treatment <- factor(Vdep_post$Treatment, levels=c("NCL","NCH","DOC","BFL","BFH","ETO"))
+
+Full <- ggplot(Vdep_post, aes(x = Target, y = ((-1*.value)*1000 / (24*60*60)), color=interaction(Treatment,Size))) +
+  stat_pointinterval(aes(fill=interaction(Target, Size)), .width = c(0.75, 0.95), 
+                     position = position_dodge(0.75)) +
+  theme_classic()+
+  coord_flip()+
+  scale_x_discrete(labels=c("Carp", "Steelhead"))+
+  #scale_y_continuous(limits = c(0,0.006))+
+  labs(
+    x = "",
+    y = "Vdep (mm/s)"
+  )+
+  scale_color_manual(values=c("#e3b238", "#e76c1f","#b29155","#91aa73", "#547785","#89959c",
+                              "#F0D27F","#F5985A","#D9C196","#B5C7A3","#79A7B3","#C5C7C9"
+                              ))+
+  theme(legend.position = "none")+
+  facet_wrap(~ Treatment, scales = "fixed", ncol = 3, labeller = as_labeller(headernames), 
+             axes="all_y", axis.labels="margins") 
+g <- facetColor(Full, c("#B5C7A3","#79A7B3","#C5C7C9","#F0D27F","#F5985A","#D9C196"))
+ggsave(paste0(plots.dir, "/New Plots/Fig4.png"), g, width = 8, height=6, units = c("in"))
+knitr::include_graphics(paste0(plots.dir, "/New Plots/Fig4.png"))
+```
+
+
+
+
+
+# 4. Supplementary Materials
+
+Here we reproduce the materials provided in "Supplementary_Figures&Tables.pdf"
+
+```{r Supplementary}
+
+#Figure S0
 
 Prop_plot <- ggplot(Mesos.prop %>% subset(prop!=1 & prop!=0), aes(Time.hr, prop, fill=interaction(Size, Target, sep = ":" ))) +
   geom_smooth(aes(group=Size, color=interaction(Size, Target, sep = ":" )), 
