@@ -192,7 +192,7 @@ Data.NC <- Data.NC %>%
 
 #Get mesocosm volume + ancillary for each mesocosm
 #This datasheet contains DOC, Temp, pH, turbidity, and most importantly, Mesocosm Volume for each time point
-Vol.Meso <- read.csv(paste0(files.dir,"/AncillaryFULL.csv"))
+Vol.Meso <- read.csv(paste0(files.dir,"/AncillaryFull.csv"))
 Data.NC <- inner_join(Data.NC,Vol.Meso, by=c("Meso.Num","Time"))
 
 
@@ -855,10 +855,6 @@ ggsave(paste0(plots.dir, "/New Plots/Fig4.png"), g, width = 8, height=6, units =
 knitr::include_graphics(paste0(plots.dir, "/New Plots/Fig4.png"))
 ```
 
-
-
-
-
 # 4. Supplementary Materials
 
 Here we reproduce the materials provided in "Supplementary_Figures&Tables.pdf"
@@ -1046,6 +1042,13 @@ ggsave(filename=paste0(plots.dir,"/FigS4.png"), g, width = 14, height = 12, unit
 knitr::include_graphics(paste0(plots.dir,"/FigS4.png"))
 
 # Fig. S5 : Metabolism
+
+boxlabels <- c(str_wrap("No Lvs",6),
+               str_wrap("DOC",15),
+               str_wrap("Low Lvs",6),
+               str_wrap("High Lvs",6),
+               str_wrap("Low Lvs +BF",6),
+               str_wrap("High Lvs +BF",6))
 
 Water.ER <- Mesos.tiny %>% ggplot(aes(x=Treatment, y=-Water.ER.mg.hr.L, fill=Treatment)) + 
   geom_boxplot(color="black", stroke=0.75) +
