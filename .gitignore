@@ -29,3 +29,5 @@
 *.doc~
 *.docx~
 *.tmp
+Model Fits/k.RData
+Model Fits/vdep.RData
