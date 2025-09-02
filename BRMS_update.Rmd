@@ -778,7 +778,10 @@ headernames <- c(
   `NCH` = str_wrap("High Leaves",15),
   `NCL` = str_wrap("Low Leaves",15),
   `BFH` = str_wrap("High Leaves + Biofilm",15),
-  `BFL` = str_wrap("Low Leaves + Biofilm",15)
+  `BFL` = str_wrap("Low Leaves + Biofilm",15),
+  `1.2` = "1.2 μm",
+  `0.4` = "0.4 μm",
+  `Size` = "eDNA Particle Size"
 )
 
 Full <- ggplot(post, aes(x = Target, y = (-1*.value), color=interaction(Treatment,Size))) +
@@ -853,6 +856,31 @@ Full <- ggplot(Vdep_post, aes(x = Target, y = ((-1*.value)*1000 / (24*60*60)), c
 g <- facetColor(Full, c("#B5C7A3","#79A7B3","#C5C7C9","#F0D27F","#F5985A","#D9C196"))
 ggsave(paste0(plots.dir, "/New Plots/Fig4.png"), g, width = 8, height=6, units = c("in"))
 knitr::include_graphics(paste0(plots.dir, "/New Plots/Fig4.png"))
+
+
+# Alternate figure bc. of confusion with colors
+
+Full <- ggplot(Vdep_post, aes(x = Target, y = ((-1*.value)*1000 / (24*60*60)), color=Size)) +
+  stat_pointinterval(aes(fill= Size), .width = c(0.75, 0.95), position = position_dodge(0.75)) +
+  theme_classic()+
+  coord_flip()+
+  scale_x_discrete(labels=c("Carp", "Steelhead"))+
+  #scale_y_continuous(limits = c(0,0.006))+
+  labs(
+    x = "",
+    y = "Vdep (mm/s)", 
+    color = "Particle Size",
+    fill = "Particle Size"
+  )+
+  scale_y_continuous(limits = c(0,0.006)) +
+  scale_color_manual(values=c("#212529","#adb5bd"), 
+                     labels = as_labeller(headernames)) +
+  scale_fill_manual(values=c("#212529","#adb5bd"), labels = as_labeller(headernames)) + 
+  facet_wrap(~ Treatment, scales = "fixed", ncol = 3, labeller = as_labeller(headernames), 
+             axes="all", axis.labels="margins") 
+g <- facetColor(Full, c("#B5C7A3","#79A7B3","#C5C7C9","#F0D27F","#F5985A","#D9C196")) 
+ggsave(paste0(plots.dir, "/New Plots/Fig4_alt.png"), g, width = 10, height=6, units = c("in")) ;
+knitr::include_graphics(paste0(plots.dir, "/New Plots/Fig4_alt.png"))
 ```
 
 # 4. Supplementary Materials
