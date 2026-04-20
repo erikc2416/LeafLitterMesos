@@ -1,7 +1,7 @@
 ---
 title: "Script (Data Compilation + Analysis)"
 author: "Erik Curtis"
-date: "2024-05-30"
+date: "2026-04-20"
 output:
   pdf_document: 
     latex_engine: xelatex
@@ -1276,3 +1276,48 @@ ggsave(paste0(plots.dir,"/FigS5.png"), ER.Full, width=10, height = 5.5, units=c(
 knitr::include_graphics(paste0(plots.dir,"/FigS5.png"))
 
 ```
+
+
+Also, save all the main figures in .svg format.
+
+```{r vector_graphics}
+
+library(svglite)
+
+#Figure 2
+ggsave(filename=paste0(plots.dir,"/Fig2.svg") , PSD_plot, width = 14, height =7.5, units = c("in"))
+knitr::include_graphics(paste0(plots.dir,"/Fig2.svg"))
+
+#Figure 3
+ggsave(paste0(plots.dir,"/Fig3.svg"), Removal.Plot, width = 12, height = 9, units=c("in"))
+knitr::include_graphics(paste0(plots.dir,"/Fig3.svg"))
+
+#Figure 4
+ggsave(filename=paste0(plots.dir,"/Fig4.svg"), RemovalStack, width = 15, height = 18, units = c("in"))
+knitr::include_graphics(paste0(plots.dir,"/Fig4.svg"))
+
+#Figure S0
+ggsave(paste0(plots.dir,"/FigS0.svg"), Prop_plot, width = 14, height =7.5, units = c("in"))
+knitr::include_graphics(paste0(plots.dir,"/FigS0.svg"))
+
+#Figure S1
+ggsave(paste0(plots.dir,"/FigS1.svg"), BKTplot, width = 12, height = 8, units = c("in"))
+knitr::include_graphics(paste0(plots.dir,"/FigS1.svg"))
+
+#Figure S2
+ggsave(paste0(plots.dir,"/FigS2.svg"), resid_panel(mixed.mod, plots="all"), width = 8, height =6, units = c("in"))
+
+#Figure S3
+ggsave(filename=paste0(plots.dir,"/FigS3.svg"), g, width = 14, height = 12, units = c("in"))
+knitr::include_graphics(paste0(plots.dir,"/FigS3.svg"))
+
+#Figure S4
+ggsave(filename=paste0(plots.dir,"/FigS4.svg"), g, width = 14, height = 12, units = c("in"))
+knitr::include_graphics(paste0(plots.dir,"/FigS4.svg"))
+
+#Figure S5
+ggsave(paste0(plots.dir,"/FigS5.svg"), ER.Full, width=10, height = 5.5, units=c("in"))
+knitr::include_graphics(paste0(plots.dir,"/FigS5.svg"))
+
+```
+
