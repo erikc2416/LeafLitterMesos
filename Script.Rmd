@@ -724,15 +724,17 @@ Avg.GC <- ggplot(Mesos.Comb, aes(x=Time.hr, y=Gc.mesocosm, fill = interaction(Si
   theme_bw()+theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
   ylab(expression(Average~Gene~Copies))+
   xlab(expression(Time~(hours)))+
-  theme(axis.text.y=element_text(size=10,color="black"))+
-  theme(axis.text.x=element_text(size=10,color="black"))+
-  theme(axis.title.x=element_text(size=14,color="black"))+
-  theme(axis.title.y=element_text(size=14,color="black"))+
+  theme(axis.text.y=element_text(size=12,color="black"))+
+  theme(axis.text.x=element_text(size=12,color="black"))+
+  theme(axis.title.x=element_text(size=16,color="black"))+
+  theme(axis.title.y=element_text(size=16,color="black"))+
   scale_y_continuous(labels = scales::comma, position = "right")+
   facet_grid(Target~Treatment, switch="y", labeller = as_labeller(headernames), scales="free_y")+
-  theme(strip.text.x = element_text(size=10),
-        strip.text.y = element_text(size=10))+
+  theme(strip.text.x = element_text(size=12),
+        strip.text.y = element_text(size=12))+
   theme(panel.spacing = unit(0.5, "lines"))+
+  theme(legend.title = element_text(size=14,color="black"),
+        legend.text = element_text(size=13,color="black"))+
   labs(fill="Legend")
 
 #Proportions PSD
@@ -742,14 +744,14 @@ AVG.PSD <- ggplot(Mesos.Comb, aes(x=Time.hr, y=prop, fill = interaction(Size, Ta
   theme_bw()+
   theme_bw()+theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
   ylab(expression(Proportion))+
-  theme(axis.text.y=element_text(size=10,color="black"))+
-  theme(axis.text.x=element_text(size=10,color="black"))+
-  theme(axis.title.x=element_text(size=14,color="black"))+
-  theme(axis.title.y=element_text(size=14,color="black"))+
+  theme(axis.text.y=element_text(size=12,color="black"))+
+  theme(axis.text.x=element_text(size=12,color="black"))+
+  theme(axis.title.x=element_text(size=16,color="black"))+
+  theme(axis.title.y=element_text(size=16,color="black"))+
   scale_y_continuous(labels = scales::comma, position = "right")+
   facet_grid(Target~Treatment, switch="y", labeller = as_labeller(headernames), scales="free_y")+
-  theme(strip.text.x = element_text(size=10),
-        strip.text.y = element_text(size=10))+
+  theme(strip.text.x = element_text(size=12),
+        strip.text.y = element_text(size=12))+
   theme(panel.spacing = unit(0.5, "lines"))+
   labs(fill="Legend")
 
@@ -760,23 +762,27 @@ get_inset <- function(df){
   p <- ggplot(df, aes(x=Time.hr, y=prop, fill = interaction(Size, Target, sep = ":" ))) +
     geom_area(size =0.5 ,colour="black", outline.type="full")+
     scale_fill_manual(values=c("#009AD0","#B7ECFF","#BD62CC","#E8CDE9"), guide="none")+
-    theme_bw(base_size=9)+
+    theme_bw(base_size=11)+
     theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
-    theme(axis.text.y=element_text(size=rel(0.9),color="black"))+
-    theme(axis.text.x=element_text(size=rel(0.9),color="black"))+
+    theme(axis.text.y=element_text(size=rel(1.05),color="black"))+
+    theme(axis.text.x=element_text(size=rel(1.05),color="black"))+
     theme(axis.title.x=element_blank())+
     ylab(expression(Proportion))+
-    theme(axis.title.y=element_text(size=rel(0.9),color="black"))
+    theme(axis.title.y=element_text(size=rel(1.05),color="black"))+
+    theme(plot.background = element_rect(fill="transparent", color=NA),
+          panel.background = element_rect(fill="transparent", color=NA))
   q <- ggplot(df, aes(x=Time.hr, y=prop, fill = interaction(Size, Target, sep = ":" ))) +
     geom_area(size =0.5 ,colour="black", outline.type="full")+
     scale_fill_manual(values=c("#BD62CC","#E8CDE9"), guide="none")+
-    theme_bw(base_size=9)+
+    theme_bw(base_size=11)+
     theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
-    theme(axis.text.y=element_text(size=rel(0.9),color="black"))+
-    theme(axis.text.x=element_text(size=rel(0.9),color="black"))+
+    theme(axis.text.y=element_text(size=rel(1.05),color="black"))+
+    theme(axis.text.x=element_text(size=rel(1.05),color="black"))+
     theme(axis.title.x=element_blank())+
     ylab(expression(Proportion))+
-    theme(axis.title.y=element_text(rel(0.9),color="black"))
+    theme(axis.title.y=element_text(size=rel(1.05),color="black"))+
+    theme(plot.background = element_rect(fill="transparent", color=NA),
+          panel.background = element_rect(fill="transparent", color=NA))
   if(first(df$Target)=="CARP")
     return(p)
   else
@@ -789,17 +795,16 @@ insets <- dlply(Mesos.Comb, c("Target", "Treatment"), function(d){
                        data = data.frame(Gc.mesocosm = min(d$Gc.mesocosm), Size=first(d$Size), Time.hr = min(d$Time.hr),
                                        Target=unique(d$Target),
                                        Treatment=unique(d$Treatment)),
-                     xmin=10, xmax=Inf, ymin=temp[1], ymax=Inf)
+                     xmin=7, xmax=Inf, ymin=temp[1]*0.96, ymax=Inf)
 })
 PSD_plot <- Avg.GC + insets
 PSD_plot <- facetColor(PSD_plot,p6)
 
 ggsave(filename=paste0(plots.dir,"/Fig2.png") , PSD_plot, width = 14, height =7.5, units = c("in"))
-
 knitr::include_graphics(paste0(plots.dir,"/Fig2.png"))
 
-# Fig. 3 : Removal Curves for each mesocosm
 
+# Fig. 3 : Removal Curves for each mesocosm
 headernames <- c(
   `0.4:CARP` = "Carp - 0.4 μm",
   `1.2:CARP` = "Carp - 1.2 μm",
@@ -827,6 +832,8 @@ Removal.Plot <- ggplot(Mesos, aes(x=Time.hr, y=LNGc.meso, fill = interaction(Tre
   theme(axis.text.x=element_text(size=12,color="black"))+
   theme(axis.title.x=element_text(size=16,color="black"))+
   theme(axis.title.y=element_text(size=16,color="black"))+
+  theme(strip.text.x = element_text(size=12),
+        strip.text.y = element_text(size=12))+
   theme(legend.position="none")+
   scale_y_continuous(expand=c(0,0),limits=c(6,17), position = "right")+
   facet_grid(Treatment~interaction(Size, Target, sep = ":" ),switch = "y", labeller = as_labeller(headernames)) %>% 
@@ -834,7 +841,6 @@ Removal.Plot <- ggplot(Mesos, aes(x=Time.hr, y=LNGc.meso, fill = interaction(Tre
 Removal.Plot <- facetColor(Removal.Plot, c(p11, p9.5))
 
 ggsave(paste0(plots.dir,"/Fig3.png"), Removal.Plot, width = 12, height = 9, units=c("in"))
-
 knitr::include_graphics(paste0(plots.dir,"/Fig3.png"))
 
 # Fig. 4 : Summary of eDNA Removal Rates 
@@ -869,14 +875,14 @@ PanelA <- ggplot(Treatment.Slopes, aes(x=Treatment, y=Time.days.trend, fill=Trea
   scale_y_continuous(limits=c(0,5.5),position = "left")+
   scale_x_discrete(labels=boxlabels)+
   xlab(expression(Treatment))+
-  theme(axis.text.y=element_text(size=16,color="black"))+
-  theme(axis.text.x=element_text(size=12,color="black"))+
-  theme(axis.title.x=element_text(size=18,color="black"))+
-  theme(axis.title.y=element_text(size=18,color="black"))+
+  theme(axis.text.y=element_text(size=18,color="black"))+
+  theme(axis.text.x=element_text(size=14,color="black"))+
+  theme(axis.title.x=element_text(size=20,color="black"))+
+  theme(axis.title.y=element_text(size=20,color="black"))+
   theme(strip.background =element_rect(fill="white"))+
   theme(legend.position="none")+
-  theme(strip.text.x = element_text(size=18),
-        strip.text.y = element_text(size=18))+
+  theme(strip.text.x = element_text(size=20),
+        strip.text.y = element_text(size=20))+
   geom_signif(comparisons = list(c("ETO","ETO"),c("DOC","DOC"),c("NCL","NCL"),c("NCH","NCH"),c("BFL","BFL"),c("BFH","BFH")),
               map_signif_level = FALSE, 
               textsize = 6, 
@@ -911,14 +917,14 @@ PanelB <- ggplot(Treatment_Size.Slopes, aes(x=Treatment, y=Time.days.trend,fill=
   scale_y_continuous(position = "left", limits = c(0,5.5))+
   scale_x_discrete(labels = boxlabels)+
   xlab(expression(Treatment))+
-  theme(axis.text.y=element_text(size=16,color="black"))+
-  theme(axis.text.x=element_text(size=12,color="black"))+
-  theme(axis.title.x=element_text(size=18,color="black"))+
-  theme(axis.title.y=element_text(size=18,color="black"))+
+  theme(axis.text.y=element_text(size=18,color="black"))+
+  theme(axis.text.x=element_text(size=14,color="black"))+
+  theme(axis.title.x=element_text(size=20,color="black"))+
+  theme(axis.title.y=element_text(size=20,color="black"))+
   theme(strip.background =element_rect(fill="white"))+
   theme(legend.position="none")+
-  theme(strip.text.x = element_text(size=18),
-        strip.text.y = element_text(size=18))+
+  theme(strip.text.x = element_text(size=20),
+        strip.text.y = element_text(size=20))+
   geom_signif(
           data = annotation_df,
           aes(xmin = start, xmax = end, annotations = label, y_position = y),
@@ -955,14 +961,14 @@ PanelC <- ggplot(Target_Size.Slopes, aes(x=Size, y=Time.days.trend, fill=interac
   scale_y_continuous(position = "left", limits = c(0,5.5))+
   scale_x_discrete(labels = headernames)+
   xlab(expression(Size))+
-  theme(axis.text.y=element_text(size=16,color="black"))+
-  theme(axis.text.x=element_text(size=12,color="black"))+
-  theme(axis.title.x=element_text(size=18,color="black"))+
-  theme(axis.title.y=element_text(size=18,color="black"))+
+  theme(axis.text.y=element_text(size=18,color="black"))+
+  theme(axis.text.x=element_text(size=14,color="black"))+
+  theme(axis.title.x=element_text(size=20,color="black"))+
+  theme(axis.title.y=element_text(size=20,color="black"))+
   theme(strip.background =element_rect(fill="white"))+
   theme(legend.position="none")+
-  theme(strip.text.x = element_text(size=18),
-        strip.text.y = element_text(size=18))+
+  theme(strip.text.x = element_text(size=20),
+        strip.text.y = element_text(size=20))+
   geom_signif(
     data = annotation_df,
     aes(xmin = start, xmax = end, annotations = label, y_position = y),
@@ -996,14 +1002,14 @@ PanelD <- ggplot(Final.Slopes, aes(x=Treatment, y=Time.days.trend, fill=interact
   scale_y_continuous(position = "left", limits = c(0,5.5))+
   scale_x_discrete(labels = boxlabels)+
   xlab(expression(Treatment))+
-  theme(axis.text.y=element_text(size=16,color="black"))+
-  theme(axis.text.x=element_text(size=12,color="black"))+
-  theme(axis.title.x=element_text(size=18,color="black"))+
-  theme(axis.title.y=element_text(size=18,color="black"))+
+  theme(axis.text.y=element_text(size=18,color="black"))+
+  theme(axis.text.x=element_text(size=14,color="black"))+
+  theme(axis.title.x=element_text(size=20,color="black"))+
+  theme(axis.title.y=element_text(size=20,color="black"))+
   theme(strip.background =element_rect(fill="white"))+
   theme(legend.position="none")+
-  theme(strip.text.x = element_text(size=18),
-        strip.text.y = element_text(size=18))+
+  theme(strip.text.x = element_text(size=20),
+        strip.text.y = element_text(size=20))+
   facet_grid(Target~Size, labeller = as_labeller(headernames))+
   geom_signif(
     data = annotation_df,
@@ -1015,10 +1021,11 @@ PanelD <- ggplot(Final.Slopes, aes(x=Treatment, y=Time.days.trend, fill=interact
 
 ## Combined Panels
 
-RemovalStack <- (wrap_elements(PanelA, clip=F) + wrap_elements(PanelB %>% facetColor(c("#999696","azure3")), clip=F)) / wrap_elements(PanelD %>% facetColor(c("#999696","azure3","#B7ECFF","#E8CDE9")))
+RemovalStack <- (wrap_elements(PanelA, clip=F) + wrap_elements(PanelB %>% facetColor(c("#999696","azure3")), clip=F)) / wrap_elements(PanelD %>% facetColor(c("#999696","azure3","#B7ECFF","#E8CDE9"))) +
+  plot_annotation(tag_levels = 'A') &
+  theme(plot.tag = element_text(size = 20, face = "bold"))
 
 ggsave(filename=paste0(plots.dir,"/Fig4.png"), RemovalStack, width = 15, height = 18, units = c("in"))
-
 knitr::include_graphics(paste0(plots.dir,"/Fig4.png"))
 
 ```
