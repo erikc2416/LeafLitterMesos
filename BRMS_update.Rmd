@@ -704,7 +704,6 @@ write.csv(k_pairs, file=paste0(files.dir,"/MesosRemovalPAIRS.csv"), row.names=F)
 
 ```
 
-
 Now, we perform our analyses for the ancillary data.
 
 ```{r Step 3}
