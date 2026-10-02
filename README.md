@@ -1,12 +1,12 @@
 # LeafLitterMesos
+
 Mesoscosms + Leaf Litter Study at Notre Dame EMF, 2022
 
-This github repository contains the neccesary data and script required to fully reproduce the contents of Curtis et al. 2024, "Submerged leaf litter colonization alters aquatic environmental DNA removal in experimental mesocosms." 
+This github repository contains the neccesary data and script required to fully reproduce the contents of Curtis et al. 2026, "Environmental DNA removal is mediated by decomposing leaf litter in streams."
 
-All stastical analyses and generation of graphics is contained in "Script.Rmd," along with comments that elucidate the workflow. To run this script, download the entire "LeafLitterMesos" repo to your desired directory, and run the .Rmd script. It is best to begin with a fresh iteration of RStudio to ensure function names do not conflict. 
-
+All statistical analyses and generation of graphics is contained in "Script.Rmd," along with comments that elucidate the workflow. To run this script, download the entire repo to your desired directory, and run the .Rmd script. 
 Feel free to address concerns or questions to the corresponding author.
 
-- Erik Curtis
-  erik.curtis@mail.utoronto.ca
-  
+* Erik Curtis
+erik.curtis@mail.utoronto.ca
+
